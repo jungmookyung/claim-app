@@ -200,6 +200,29 @@ table.f td{font-size:9.4pt}
 .ov-err{color:var(--warn);font-weight:700;font-size:13.5px;margin:6px 0 0;min-height:1em}
 .sp-guide{margin-top:10px;font-size:12.5px;line-height:1.65;background:#f3f6fc;border:1px solid #d9e2f3;border-radius:8px;padding:9px 11px}
 .sp-guide ol{margin:0;padding-left:18px}
+.custbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--hl-bg);border:1px solid #cfdaf3;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.custbar b{font-size:15px}
+.custbar small{display:block;font-size:11.5px;color:var(--sub);margin-top:2px}
+.custbar .acts{display:flex;gap:6px}
+.cust-ok{font-size:12px;font-weight:700;color:var(--good);flex-basis:100%}
+.cust-ok:empty{display:none}
+.mo{position:fixed;inset:0;z-index:60;background:rgba(18,26,48,.45);display:flex;align-items:flex-end;justify-content:center}
+.mo-in{background:#fff;width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.mo{align-items:center}.mo-in{border-radius:16px}}
+.mo-in h3{margin:0 0 6px;font-size:17px;font-weight:900}
+.mo-in .lead{font-size:13px;color:var(--sub);line-height:1.6;margin:0 0 12px}
+.pin{font-size:24px!important;letter-spacing:.5em;text-align:center;font-variant-numeric:tabular-nums;padding:10px!important}
+.mo-err{color:var(--warn);font-weight:700;font-size:13px;min-height:1.2em;margin:8px 0 0}
+.mo-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+.mo-acts button{font-size:14px;padding:10px 16px}
+.clist{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.crow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;background:#fff;text-align:left;font-family:var(--font)}
+.crow:hover{background:var(--fill)}
+.crow b{font-size:15px}
+.crow small{display:block;color:var(--sub);font-size:12px;margin-top:2px;font-variant-numeric:tabular-nums}
+.crow .del{font-size:12px;padding:6px 10px}
+.mo-tools{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mo-tools button{font-size:12.5px;padding:7px 11px}
 .bnav{display:none}
 @media (max-width:900px){
   .bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:6px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(20,30,60,.08)}
@@ -214,7 +237,7 @@ table.f td{font-size:9.4pt}
 <div class="topbar">
   <div>
     <h1>보험금 청구서 <em>자동작성</em></h1>
-    <div class="note">입력값·서명·첨부는 이 폰 안에서만 처리 · 저장 안 함 · 앱을 닫으면 사라짐 (팩스번호만 이 폰에 저장)</div>
+    <div class="note">고객 정보는 [저장]을 누를 때만 이 폰에 암호화 저장 · 사고 내용·서명·첨부는 저장 안 함</div>
   </div>
   <div class="btns">
     <button class="primary" id="btnInstall" hidden>앱 설치</button>
@@ -227,6 +250,11 @@ table.f td{font-size:9.4pt}
 
 <div class="wrap">
 <aside class="panel">
+  <div class="custbar" id="custBar">
+    <div><b id="custName">새 고객</b><small id="custMeta">저장된 고객 불러오기 또는 새로 입력</small></div>
+    <div class="acts"><button id="btnLoad">불러오기</button><button class="blue" id="btnSave">고객 저장</button></div>
+    <div class="cust-ok" id="custMsg"></div>
+  </div>
 
   <div class="sec">
     <h2><b>1</b>계약자</h2>
@@ -382,6 +410,9 @@ table.f td{font-size:9.4pt}
 <div id="offscreen" aria-hidden="true"></div>
 
 <nav class="bnav" aria-label="화면 이동"><button data-go="top">입력</button><button data-go="sign">고객 서명</button><button data-go="preview" class="go">청구서·팩스</button></nav>
+
+<!-- 고객 저장·불러오기 창 -->
+<div class="mo" id="mo" hidden role="dialog" aria-modal="true"><div class="mo-in" id="moIn"></div></div>
 
 <!-- 고객 서명 화면 -->
 <div class="ov" id="signOv" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle">
@@ -1178,18 +1209,22 @@ $('#btnPrintAll').addEventListener('click',async e=>{
   setTimeout(()=>{btn.textContent=old;btn.disabled=false},2200);
 });
 function todayStr(){ const t=new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}` }
-$('#btnClear').addEventListener('click',()=>{
-  if(!confirm('입력한 내용·서명·첨부를 모두 지울까요?')) return;
+function resetForm(){
   document.querySelectorAll('.panel [data-k]').forEach(el=>el.value='');
-  document.querySelectorAll('.panel .pills input').forEach(i=>i.checked=false);
+  document.querySelectorAll('.panel .pills input').forEach(i=>{ if(i.name!=='mfaxApp') i.checked=false });
   ['recv','rtype'].forEach(n=>{ const f=document.querySelector(`input[name="${n}"]`); if(f) f.checked=true; });
   document.querySelector('#notice input[value="문자메시지"]').checked=true;
   document.querySelector('input[name="atype"][value="상해"]').checked=true;
+  $('#same').checked=true;
   $('#w_date').value=todayStr();
   atts.splice(0).forEach(a=>a.url&&URL.revokeObjectURL(a.url)); renderAtts();
   esign=null;
   Object.keys(SP).forEach(k=>{ clearInterval(SP[k].timer); SP[k].scans.forEach(a=>a.url&&URL.revokeObjectURL(a.url)); delete SP[k] });
-  selected.clear(); renderInsList(); renderFax(); render();
+  selected.clear();
+}
+$('#btnClear').addEventListener('click',()=>{
+  if(!confirm('입력한 내용·서명·첨부를 모두 지울까요? (저장된 고객 목록은 그대로)')) return;
+  resetForm(); curCust=null; custUI(); renderInsList(); renderFax(); render();
 });
 $('#btnSample').addEventListener('click',()=>{
   const s={c_name:'홍길동',c_rrn:'900101-1234567',c_tel:'010-1234-5678',p_job:'회사원(사무직)',p_addr:'서울시 강서구 마곡동 (예시)',p_mail:'hong@example.com',p_guard:'',p_bene:'',
@@ -1203,9 +1238,195 @@ $('#btnSample').addEventListener('click',()=>{
   renderInsList(); renderFax(); render();
 });
 
-// 시작: 예시 상태로 열고, 맥미니 서버로 열렸는지 확인
+// ======================================================================
+//  고객 저장·불러오기 — 이 폰에만, 형이 정한 6자리 PIN으로 암호화(AES-GCM, PBKDF2)
+//  저장 항목: 계약자·피보험자 인적사항, 주소·직업·이메일, 의료급여, 법정대리인·수익자, 안내방법, 계좌, 청구 보험사
+//  저장 안 함: 사고 내용·진단명·경위, 서명, 첨부 서류
+// ======================================================================
+const VKEY='claimCustV1', CUST_FIELDS=['c_name','c_rrn','c_tel','p_name','p_rrn','p_tel','p_job','p_addr','p_mail','p_guard','p_bene','bank','acct','holder'];
+const VAULT={key:null, salt:null, list:null, hidAt:0};
+let curCust=null;
+const te=new TextEncoder(), td=new TextDecoder();
+const toB64=u=>{ let s=''; const a=new Uint8Array(u); for(let i=0;i<a.length;i+=8192) s+=String.fromCharCode.apply(null,a.subarray(i,i+8192)); return btoa(s) };
+const fromB64=b=>Uint8Array.from(atob(b),c=>c.charCodeAt(0));
+function vaultRaw(){ try{ return JSON.parse(localStorage.getItem(VKEY)||'null') }catch(e){ return null } }
+async function deriveKey(pin,salt){
+  const base=await crypto.subtle.importKey('raw',te.encode(pin),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function decryptBlob(raw,key){ const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(raw.iv)},key,fromB64(raw.data)); return JSON.parse(td.decode(pt)) }
+async function vaultSave(){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},VAULT.key,te.encode(JSON.stringify(VAULT.list)));
+  localStorage.setItem(VKEY,JSON.stringify({v:1,salt:toB64(VAULT.salt),iv:toB64(iv),data:toB64(ct),n:VAULT.list.length}));
+}
+function vaultCount(){ const r=vaultRaw(); return r?(r.n||0):0 }
+// 10분 이상 다른 앱에 가 있으면 다시 PIN
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) VAULT.hidAt=Date.now(); else if(VAULT.key&&VAULT.hidAt&&Date.now()-VAULT.hidAt>10*60e3){ VAULT.key=null; VAULT.list=null; } });
+
+// ---- 모달
+function moOpen(html){ $('#moIn').innerHTML=html; $('#mo').hidden=false; document.body.classList.add('locked'); setTimeout(()=>{ const f=$('#moIn').querySelector('input:not([type=file]):not([type=checkbox])'); f&&f.focus() },50) }
+function moClose(){ $('#mo').hidden=true; $('#moIn').innerHTML=''; if($('#signOv').hidden) document.body.classList.remove('locked') }
+$('#mo').addEventListener('click',e=>{ if(e.target.id==='mo') moClose() });
+function pinBox(title,lead,two){
+  return new Promise(res=>{
+    moOpen(`<h3>${esc(title)}</h3><p class="lead">${lead}</p>
+      <input type="password" class="pin" id="pin1" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••••" aria-label="PIN 6자리">
+      ${two?'<input type="password" class="pin" id="pin2" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="한 번 더" aria-label="PIN 확인" style="margin-top:8px">':''}
+      <p class="mo-err" id="pinErr"></p>
+      <div class="mo-acts"><button id="pinNo">취소</button><button class="blue" id="pinOk">확인</button></div>`);
+    const done=v=>{ moClose(); res(v) };
+    const ok=()=>{ const a=$('#pin1').value.trim(), b=two?$('#pin2').value.trim():a;
+      if(!/^\d{6}$/.test(a)) return $('#pinErr').textContent='숫자 6자리를 넣어주세요.';
+      if(a!==b) return $('#pinErr').textContent='두 번 입력한 PIN이 다릅니다.';
+      done(a) };
+    $('#pinOk').onclick=ok; $('#pinNo').onclick=()=>done(null);
+    $('#moIn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); ok() } };
+  });
+}
+// 저장소 열기 (없으면 만들기)
+async function unlock(create){
+  if(VAULT.key&&VAULT.list) return true;
+  if(!window.crypto||!crypto.subtle){ custMsg('이 화면에서는 암호화 저장을 쓸 수 없습니다 (https 주소의 앱에서 사용).'); return false }
+  const raw=vaultRaw();
+  if(!raw){
+    if(!create) return false;
+    const pin=await pinBox('고객 저장용 PIN 만들기','처음 한 번만 정합니다. 고객 정보는 이 PIN으로 암호화돼 <b>이 폰에만</b> 저장됩니다.<br>PIN을 잊으면 저장된 고객을 열 수 없으니 꼭 기억해 두세요.',true);
+    if(!pin) return false;
+    VAULT.salt=crypto.getRandomValues(new Uint8Array(16)); VAULT.key=await deriveKey(pin,VAULT.salt); VAULT.list=[]; await vaultSave(); return true;
+  }
+  for(let tries=0;tries<5;tries++){
+    const pin=await pinBox('PIN 입력',tries?'<span class="warn">PIN이 맞지 않습니다. 다시 넣어주세요.</span>':'저장된 고객을 열려면 PIN 6자리를 넣어주세요.',false);
+    if(!pin) return false;
+    try{ const salt=fromB64(raw.salt), key=await deriveKey(pin,salt); VAULT.list=await decryptBlob(raw,key); VAULT.key=key; VAULT.salt=salt; return true }catch(e){}
+  }
+  custMsg('PIN이 5번 틀렸습니다. 잠시 후 다시 시도하세요.'); return false;
+}
+
+// ---- 화면 값 ↔ 고객 기록
+let keepRrnBack=true;
+try{ keepRrnBack=localStorage.getItem('claimKeepRrn')!=='0' }catch(e){}
+function readCust(){
+  const f={}; CUST_FIELDS.forEach(k=>f[k]=val(k));
+  if(!keepRrnBack){ ['c_rrn','p_rrn'].forEach(k=>{ const d=onlyDigits(f[k]); f[k]=d?d.slice(0,6)+'-':'' }) }
+  f.same=$('#same').checked; f.medicaid=radio('medicaid'); f.recv=radio('recv'); f.notice=checks('notice');
+  return {f, ins:[...selected]};
+}
+function custLabel(r){ const f=r.f, n=f.same?f.c_name:(f.p_name||f.c_name); return n||'(이름 없음)' }
+function custSub(r){
+  const f=r.f, rr=onlyDigits(f.same?f.c_rrn:(f.p_rrn||f.c_rrn)), tel=onlyDigits(f.same?f.c_tel:(f.p_tel||f.c_tel));
+  const birth=rr.length>=6?`${rr.slice(0,2)}.${rr.slice(2,4)}.${rr.slice(4,6)}`:'';
+  const d=new Date(r.updatedAt||r.savedAt);
+  return [birth, tel?'···'+tel.slice(-4):'', r.ins&&r.ins.length?r.ins.join('·'):'', `저장 ${d.getMonth()+1}/${d.getDate()}`].filter(Boolean).join(' · ');
+}
+function applyCust(r){
+  resetForm();
+  const f=r.f; CUST_FIELDS.forEach(k=>{ const el=document.getElementById(k); if(el) el.value=f[k]||'' });
+  $('#same').checked=f.same!==false;
+  const setR=(n,v)=>{ const el=v&&document.querySelector(`input[name="${n}"][value="${v}"]`); if(el) el.checked=true };
+  setR('medicaid',f.medicaid); setR('recv',f.recv||'피보험자');
+  document.querySelectorAll('#notice input').forEach(i=>i.checked=(f.notice&&f.notice.length?f.notice:['문자메시지']).includes(i.value));
+  (r.ins||[]).forEach(n=>{ selected.add(n); if(![].concat(...Object.values(INS)).includes(n)&&!custom.includes(n)) custom.push(n) });
+  curCust=r.id; custUI(`${custLabel(r)} 고객을 불러왔습니다. 사고 내용부터 입력하세요.`);
+  renderInsList(); renderFax(); render();
+}
+function custMsg(m){ const el=$('#custMsg'); el.textContent=m||''; clearTimeout(custMsg.t); if(m) custMsg.t=setTimeout(()=>el.textContent='',6000) }
+function custUI(msg){
+  const r=curCust&&VAULT.list?VAULT.list.find(x=>x.id===curCust):null;
+  $('#custName').textContent=r?custLabel(r):'새 고객';
+  const n=VAULT.list?VAULT.list.length:vaultCount();
+  $('#custMeta').textContent=r?`저장된 고객 · ${custSub(r)}`:(n?`저장된 고객 ${n}명 — [불러오기]`:'처음 입력한 고객은 [고객 저장]으로 남겨두세요');
+  $('#btnSave').textContent=r?'고객 정보 갱신':'고객 저장';
+  if(msg!==undefined) custMsg(msg);
+}
+
+$('#btnSave').addEventListener('click',async()=>{
+  const d=collect(); if(!d.insured.name&&!d.holder.name) return custMsg('이름을 먼저 입력하세요.');
+  if(!await unlock(true)) return;
+  const rec=readCust(), now=Date.now();
+  const key=x=>[custLabel(x), onlyDigits(x.f.same?x.f.c_rrn:(x.f.p_rrn||x.f.c_rrn)).slice(0,6)].join('|');
+  let r=curCust?VAULT.list.find(x=>x.id===curCust):null;
+  if(!r) r=VAULT.list.find(x=>key(x)===key(rec));   // 같은 이름+생년월일이면 갱신
+  const isNew=!r;
+  if(r){ r.f=rec.f; r.ins=rec.ins; r.updatedAt=now }
+  else { r={id:'c'+now.toString(36)+Math.random().toString(36).slice(2,6), f:rec.f, ins:rec.ins, savedAt:now, updatedAt:now}; VAULT.list.push(r) }
+  await vaultSave(); curCust=r.id;
+  custUI(`${custLabel(r)} 고객 ${isNew?'저장됨 — 다음엔 [불러오기]로 바로 채워집니다':'정보 갱신됨'}${keepRrnBack?'':' (주민번호 뒷자리 제외)'}`);
+});
+
+function listHTML(q){
+  const items=VAULT.list.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).filter(r=>!q||custLabel(r).includes(q)||onlyDigits(q).length>=4&&onlyDigits(r.f.c_tel+' '+r.f.p_tel).includes(onlyDigits(q)));
+  return items.length?items.map(r=>`<div class="crow" data-id="${r.id}" role="button" tabindex="0"><div><b>${esc(custLabel(r))}</b><small>${esc(custSub(r))}</small></div><button class="del" data-del="${r.id}" aria-label="${esc(custLabel(r))} 삭제">삭제</button></div>`).join('')
+    :`<p class="hint" style="text-align:center;padding:14px 0">${VAULT.list.length?'찾는 고객이 없습니다.':'아직 저장된 고객이 없습니다.<br>고객 정보를 입력하고 [고객 저장]을 누르세요.'}</p>`;
+}
+async function openList(){
+  if(!vaultRaw()) return moOpen(`<h3>고객 불러오기</h3><p class="lead">이 폰에는 아직 저장된 고객이 없습니다.<br>고객 정보를 입력하고 [고객 저장]을 누르거나, 다른 폰에서 만든 백업 파일을 가져오세요.</p>
+    <div class="mo-tools"><label class="drop" style="padding:9px 13px;font-size:13px;display:inline-block">백업 가져오기<input type="file" id="cImport" accept="application/json,.json"></label></div>
+    <div class="mo-acts"><button id="cClose">닫기</button></div>`);
+  if(!await unlock(false)) return;
+  moOpen(`<h3>고객 불러오기</h3><p class="lead">고르면 인적사항·계좌·청구 보험사가 채워집니다. 사고 내용·서명·첨부는 새로 입력합니다.</p>
+    <input type="text" id="cq" placeholder="이름 또는 휴대폰 뒷자리 검색" aria-label="고객 검색">
+    <div class="clist" id="clist">${listHTML('')}</div>
+    <div class="mo-tools">
+      <label class="opt" style="flex-basis:100%"><input type="checkbox" id="keepRrn" ${keepRrnBack?'checked':''}> 주민번호 뒷자리까지 저장 (끄면 앞 6자리만)</label>
+      <button id="cExport">백업 파일 만들기</button>
+      <label class="drop" style="padding:7px 11px;font-size:12.5px;display:inline-block">백업 가져오기<input type="file" id="cImport" accept="application/json,.json"></label>
+      <button id="cWipe">전체 삭제</button>
+    </div>
+    <div class="mo-acts"><button id="cClose">닫기</button></div>`);
+}
+$('#btnLoad').addEventListener('click',openList);
+$('#moIn').addEventListener('input',e=>{ if(e.target.id==='cq') $('#clist').innerHTML=listHTML(e.target.value.trim()) });
+$('#moIn').addEventListener('click',async e=>{
+  const t=e.target;
+  if(t.id==='cClose') return moClose();
+  if(t.dataset.del){
+    e.stopPropagation(); const r=VAULT.list.find(x=>x.id===t.dataset.del); if(!r) return;
+    if(!confirm(`${custLabel(r)} 고객 정보를 이 폰에서 지울까요?`)) return;
+    VAULT.list=VAULT.list.filter(x=>x.id!==r.id); await vaultSave(); if(curCust===r.id) curCust=null;
+    $('#clist').innerHTML=listHTML(($('#cq')||{}).value||''); custUI(); return;
+  }
+  const row=t.closest('.crow');
+  if(row){
+    const r=VAULT.list.find(x=>x.id===row.dataset.id); if(!r) return;
+    const dirty=collect().insured.name&&(!curCust||curCust!==r.id);
+    if(dirty&&!confirm('지금 입력 중인 내용·서명·첨부가 지워지고 이 고객으로 바뀝니다. 계속할까요?')) return;
+    moClose(); applyCust(r); return;
+  }
+  if(t.id==='cExport'){
+    const raw=localStorage.getItem(VKEY); if(!raw) return;
+    const d=new Date(), nm=`청구서앱_고객백업_${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+    download(new File([raw],nm,{type:'application/json'}));
+    custMsg(`백업 파일(${nm})을 저장했습니다. 같은 PIN으로만 열립니다.`); return;
+  }
+  if(t.id==='cWipe'){
+    if(!confirm(`저장된 고객 ${VAULT.list.length}명을 이 폰에서 모두 지울까요? 되돌릴 수 없습니다.`)) return;
+    localStorage.removeItem(VKEY); VAULT.key=null; VAULT.list=null; VAULT.salt=null; curCust=null; moClose(); custUI('저장된 고객을 모두 지웠습니다.'); return;
+  }
+});
+$('#moIn').addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.id==='keepRrn'){ keepRrnBack=t.checked; try{ localStorage.setItem('claimKeepRrn',keepRrnBack?'1':'0') }catch(_){} return; }
+  if(t.id==='cImport'&&t.files[0]){
+    let raw; try{ raw=JSON.parse(await t.files[0].text()); if(!raw.salt||!raw.data) throw 0 }catch(_){ return custMsg('청구서앱 백업 파일이 아닙니다.') }
+    let list=null, key=null;
+    if(VAULT.key&&VAULT.salt&&raw.salt===toB64(VAULT.salt)){ try{ list=await decryptBlob(raw,VAULT.key); key=VAULT.key }catch(_){} }
+    if(!list){ // 백업을 만든 폰의 PIN으로 열기
+      moClose();
+      for(let i=0;i<3&&!list;i++){ const pin=await pinBox('백업 파일 PIN',(i?'<span class="warn">PIN이 맞지 않습니다.</span> ':'')+'백업을 만든 폰에서 쓰던 PIN 6자리를 넣어주세요.',false); if(!pin) break;
+        try{ key=await deriveKey(pin,fromB64(raw.salt)); list=await decryptBlob(raw,key) }catch(_){ list=null } }
+      if(!list) return custMsg('백업 파일을 열지 못했습니다 (PIN 확인).');
+    }
+    if(!VAULT.list){ VAULT.salt=fromB64(raw.salt); VAULT.key=key; VAULT.list=[] }   // 이 폰에 저장소가 없으면 백업의 PIN을 그대로 사용
+    let add=0, upd=0;
+    list.forEach(r=>{ const cur=VAULT.list.find(x=>x.id===r.id); if(!cur){ VAULT.list.push(r); add++ } else if((r.updatedAt||0)>(cur.updatedAt||0)){ Object.assign(cur,r); upd++ } });
+    await vaultSave(); custUI(`백업 가져오기 완료 — 새 고객 ${add}명, 갱신 ${upd}명${raw.salt===toB64(VAULT.salt)?'':' (이 폰 PIN으로 다시 암호화)'}`); if(!$('#mo').hidden&&$('#clist')) $('#clist').innerHTML=listHTML('');
+  }
+});
+
+// 시작: 맥미니 서버로 열렸는지 확인
 $('#w_date').value=todayStr();
-renderInsList(); renderFax(); renderAtts(); render();
+renderInsList(); renderFax(); renderAtts(); render(); custUI();
 detectServer();
 { const r=document.querySelector(`input[name="mfaxApp"][value="${mfaxPkg}"]`); if(r) r.checked=true; }
 $('#mfaxApp').addEventListener('change',e=>{ if(!MFAX_APPS[e.target.value]) return; mfaxPkg=e.target.value; try{ localStorage.setItem('claimMfaxPkg',mfaxPkg) }catch(_){} Object.keys(SP).forEach(refreshSP); });
