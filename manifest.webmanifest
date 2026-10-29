@@ -1,0 +1,17 @@
+{
+  "name": "보험금 청구서 자동작성",
+  "short_name": "청구서",
+  "description": "고객 정보 한 번 입력 → 보험사 청구서 자동 작성 → 고객 서명 → 모바일팩스로 보내기",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef1f6",
+  "theme_color": "#1b2a4e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

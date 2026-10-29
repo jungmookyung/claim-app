@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>보험금 청구서 자동작성</title>
+<meta name="theme-color" content="#1b2a4e">
+<meta name="robots" content="noindex,nofollow">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 왼쪽 입력 패널 + 오른쪽 보험사별 [발송 바 → 발송 패널 → 청구서 미리보기]. 서명은 전체화면 고객용 화면 */
+:root{
+  --ink:#16213a; --sub:#5b6680; --line:#d5dbe7; --bg:#eef1f6; --panel:#ffffff;
+  --navy:#1b2a4e; --accent:#e8a33d; --fill:#f5f7fb; --hl:#1f4fd6; --warn:#b4261a; --good:#1d7a46;
+  --warn-bg:#fdecea; --good-bg:#e4f4ea; --hl-bg:#eef3ff;
+  --font:'Noto Sans KR','Noto Sans CJK KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14px}
+body.locked{overflow:hidden}
+.topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  padding:12px 20px;padding-top:calc(12px + env(safe-area-inset-top,0px));background:var(--navy);color:#fff}
+.topbar h1{margin:0;font-size:18px;font-weight:900;letter-spacing:-.02em}
+.topbar h1 em{font-style:normal;color:var(--accent)}
+.topbar .note{font-size:12px;opacity:.8}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font-family:var(--font);font-size:13px;font-weight:700;border-radius:8px;border:1px solid var(--line);
+  background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1b1205}
+button.blue{background:var(--hl);border-color:var(--hl);color:#fff}
+button.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--hl);outline-offset:1px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:900;border-radius:999px;padding:3px 9px;line-height:1.3;white-space:nowrap}
+.chip.ok{background:var(--good-bg);color:var(--good)}
+.chip.bad{background:var(--warn-bg);color:var(--warn)}
+.chip.off{background:#e9ecf2;color:var(--sub)}
+.chip.mode{background:#fff4dd;color:#7a4a00}
+.topbar .chip{cursor:pointer}
+
+.wrap{display:grid;grid-template-columns:390px 1fr;height:calc(100% - 62px)}
+.panel{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:16px 18px 60px}
+.preview{overflow:auto;padding:20px;min-width:0}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;height:auto}.panel{border-right:0}.preview{padding:16px}}
+
+.sec{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.sec:first-child{border-top:0;margin-top:0;padding-top:0}
+.sec h2{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;font-weight:900}
+.sec h2 b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;flex:none}
+.sec h2 span{font-weight:500;color:var(--sub);font-size:12px}
+.row{display:grid;grid-template-columns:88px 1fr;gap:8px;align-items:center;margin-bottom:7px}
+.row.top{align-items:start}
+.row > label,.row > .lb{font-size:12px;color:var(--sub);font-weight:500;line-height:1.35}
+input[type=text],input[type=password],input[type=date],select,textarea{width:100%;font-family:var(--font);font-size:13px;
+  padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+textarea{resize:vertical;min-height:56px}
+input:disabled{background:var(--fill);color:var(--sub)}
+.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;background:var(--hl-bg);padding:7px 10px;border-radius:7px;margin-bottom:8px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pills label{font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;user-select:none;background:#fff;color:var(--ink)}
+.pills input{position:absolute;opacity:0;pointer-events:none}
+.pills label:has(input:checked){background:var(--hl);border-color:var(--hl);color:#fff}
+.pills label:has(input:focus-visible){outline:2px solid var(--hl);outline-offset:1px}
+.sub-box{border:1px solid var(--line);border-radius:9px;padding:10px 10px 4px;margin:4px 0 8px;background:var(--fill)}
+.sub-box .cap{font-size:11.5px;font-weight:900;color:var(--navy);margin-bottom:8px}
+.ins-search{margin-bottom:8px}
+.ins-list{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
+.ins-grp{font-size:11px;font-weight:900;color:var(--sub);margin:6px 4px 4px;letter-spacing:.04em}
+.ins-item{display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:13px;border-radius:6px}
+.ins-item:hover{background:var(--fill)}
+.ins-item .dot{width:8px;height:8px;border-radius:2px;flex:none}
+.badge{font-size:10.5px;font-weight:900;color:#0d6b3a;background:#e2f5ea;border-radius:4px;padding:1px 6px;margin-left:auto}
+.hint{font-size:11.5px;color:var(--sub);line-height:1.55;margin:6px 0 0}
+.warn{color:var(--warn);font-weight:700}
+.statebox{border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--fill);font-size:12.5px;line-height:1.6}
+.statebox .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+.faxbox{margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.faxrow{display:grid;grid-template-columns:1fr 130px 44px;gap:6px;align-items:center;padding:6px 8px;border-top:1px solid var(--line);font-size:12.5px}
+.faxrow:first-child{border-top:0}
+.faxrow input{padding:5px 7px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.faxrow button{padding:5px 0;font-size:11px}
+.faxrow.empty input{border-color:#e6a49c;background:#fff6f5}
+
+.drop{display:block;border:1.5px dashed #9aa6c2;border-radius:10px;padding:14px;text-align:center;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;background:var(--fill)}
+.drop input{display:none}
+.att-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.att{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:5px 6px}
+.att .th{width:40px;height:40px;border-radius:5px;background:var(--fill) center/cover no-repeat;display:grid;place-items:center;font-size:10px;font-weight:900;color:var(--sub)}
+.att .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att .ord{display:flex;gap:4px}
+.att .ord button{padding:3px 7px;font-size:11px}
+
+/* 보험사별 발송 바 · 발송 패널 */
+.sendbar{width:210mm;max-width:100%;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+  background:var(--navy);color:#fff;border-radius:10px 10px 0 0;padding:10px 12px}
+.sendbar.solo{border-radius:10px;margin-bottom:8px}
+.sendbar .who{font-weight:900;font-size:14px;min-width:0}
+.sendbar .who small{display:block;font-weight:500;font-size:11.5px;opacity:.85;font-variant-numeric:tabular-nums}
+.sendbar .who .tag{display:inline-block;font-size:10.5px;font-weight:900;background:#2f8a57;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.sendbar .acts{display:flex;gap:6px;flex-wrap:wrap}
+.sendbar button.go{background:var(--accent);border-color:var(--accent);color:#1b1205}
+.sendbar .st{flex-basis:100%;font-size:12px;line-height:1.5;opacity:.95}
+.sendbar .st:empty{display:none}
+.sp{width:210mm;max-width:100%;margin:0 auto 8px;background:#fff;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:12px 14px}
+.sp-grid{display:grid;grid-template-columns:72px 1fr;gap:9px 10px;align-items:start;font-size:12.5px}
+.sp-grid .k{font-weight:900;color:var(--sub);padding-top:6px}
+.sp-grid .v{min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sp-fax{max-width:190px;font-variant-numeric:tabular-nums}
+.opt{display:flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px;cursor:pointer}
+.opt-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px}
+.opt-line.on{border-color:var(--hl);background:var(--hl-bg)}
+.opt-line input[type=file]{font-size:11.5px;max-width:220px}
+.sp-ok{display:flex;gap:8px;align-items:flex-start;margin:12px 0 8px;font-size:12.5px;font-weight:700;background:#fff8ea;border:1px solid #f1d9a8;border-radius:8px;padding:9px 10px;cursor:pointer}
+.sp-ok input{margin-top:2px}
+.sp-acts{display:flex;gap:6px;flex-wrap:wrap}
+.sp-why{font-size:11.5px;color:var(--warn);margin-top:6px;line-height:1.5}
+.sp-why:empty{display:none}
+.sp-status{margin-top:10px;font-size:12.5px;line-height:1.6;border-radius:8px;padding:9px 11px;background:var(--fill)}
+.sp-status:empty{display:none}
+.sp-status.good{background:var(--good-bg);color:var(--good);font-weight:700}
+.sp-status.bad{background:var(--warn-bg);color:var(--warn);font-weight:700}
+.sp-steps{display:flex;gap:4px;margin-bottom:5px;flex-wrap:wrap}
+.sp-steps span{font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;background:#e3e7ef;color:var(--sub)}
+.sp-steps span.on{background:var(--hl);color:#fff}
+.sp-steps span.done{background:#c9d4ee;color:var(--navy)}
+
+/* 공식 양식 미리보기 */
+.official{width:210mm;max-width:100%;margin:0 auto 26px;background:#fff;box-shadow:0 4px 18px rgba(20,30,60,.12)}
+.official canvas{display:block;width:100%;height:auto}
+.official .o-msg{margin:0;padding:8px 12px;font-size:12px;color:var(--sub);border-top:1px solid var(--line);background:var(--fill)}
+
+/* 표준 양식 */
+.sheet{width:210mm;min-height:297mm;background:#fff;margin:0 auto 24px;padding:12mm 12mm 10mm;
+  box-shadow:0 4px 18px rgba(20,30,60,.12);color:#111;font-size:9.6pt;position:relative}
+.sh-head{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:6px;border-bottom:4px solid var(--brand,#1b2a4e)}
+.sh-co{font-size:13pt;font-weight:900;color:var(--brand,#1b2a4e)}
+.sh-title{font-size:20pt;font-weight:900;letter-spacing:.3em;margin-right:-.3em}
+.sh-fax{font-size:8.5pt;text-align:right;line-height:1.5}
+.sh-fax b{font-size:10.5pt;font-variant-numeric:tabular-nums}
+.sh-h3{font-size:10pt;font-weight:900;margin:10px 0 4px}
+table.f{width:100%;border-collapse:collapse;table-layout:fixed}
+table.f th,table.f td{border:1px solid #777;padding:4px 5px;vertical-align:middle;line-height:1.35}
+table.f th{background:var(--brand-bg,#eef0f4);font-weight:700;font-size:8.6pt;text-align:center}
+table.f td{font-size:9.4pt}
+.v{color:#0b3bb3;font-weight:500;white-space:pre-wrap;word-break:break-all}
+.cb{white-space:nowrap;margin-right:8px}
+.small{font-size:7.8pt;color:#444;line-height:1.5;margin:3px 0 0}
+.agree{border:1px solid #777;padding:6px 8px;font-size:8.2pt;line-height:1.55;margin-top:8px}
+.sign{display:flex;justify-content:flex-end;gap:18px;align-items:center;margin-top:10px;font-size:10pt;flex-wrap:wrap}
+.sign .line{display:inline-flex;align-items:center;gap:6px;min-width:40mm;min-height:12mm;border-bottom:1px solid #111;padding:0 4px;vertical-align:bottom}
+.sign .line img{height:11mm;width:auto}
+.sh-foot{position:absolute;left:12mm;right:12mm;bottom:7mm;font-size:7.5pt;color:#777;display:flex;justify-content:space-between}
+#offscreen{position:fixed;left:-10000px;top:0;width:210mm}
+#offscreen .sheet{margin:0;box-shadow:none;zoom:1!important}
+.empty-prev{max-width:520px;margin:60px auto;text-align:center;color:var(--sub);line-height:1.7}
+.empty-prev b{font-size:16px;color:var(--ink)}
+
+/* 고객 서명 화면 (고객에게 폰을 건네는 화면) */
+.ov{position:fixed;inset:0;z-index:50;background:#f4f6fa;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ov-in{max-width:760px;margin:0 auto;padding:16px 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.ov-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(6px + env(safe-area-inset-top,0px)) 0 10px;border-bottom:2px solid var(--navy);margin-bottom:14px}
+.ov-head b{font-size:18px;font-weight:900}
+.ov-steps{display:flex;gap:5px}
+.ov-steps span{width:26px;height:6px;border-radius:3px;background:#cfd6e4}
+.ov-steps span.on{background:var(--navy)}
+.ov h3{font-size:17px;margin:4px 0 10px;font-weight:900}
+.ov p.lead{font-size:15px;line-height:1.65;margin:0 0 12px}
+.sum{width:100%;border-collapse:collapse;font-size:15px;background:#fff;border-radius:10px;overflow:hidden}
+.sum th,.sum td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.sum th{width:34%;color:var(--sub);font-weight:700;background:var(--fill)}
+.cg{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.cg h4{margin:0 0 4px;font-size:15px;font-weight:900}
+.cg .gdesc{font-size:13px;color:var(--sub);line-height:1.55;margin:0 0 6px}
+.ci{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;padding:10px 0;border-top:1px solid #edf0f5}
+.ci .lab{font-size:15px;font-weight:700;line-height:1.4}
+.ci .lab small{display:block;font-size:12.5px;color:var(--sub);font-weight:500;margin-top:2px}
+.tog{display:flex;gap:6px}
+.tog button{font-size:14px;padding:9px 12px;min-width:64px;border-radius:9px}
+.tog button.yes.on{background:var(--hl);border-color:var(--hl);color:#fff}
+.tog button.no.on{background:#5b6680;border-color:#5b6680;color:#fff}
+@media (max-width:520px){.ci{grid-template-columns:1fr}.tog button{flex:1}}
+.allbtn{width:100%;font-size:15px;padding:12px;margin:0 0 12px}
+.docs{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.docs img{width:100%;border:1px solid var(--line);border-radius:6px;background:#fff}
+.notice{font-size:13.5px;line-height:1.6;background:#fff8ea;border:1px solid #f1d9a8;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.padbox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.padbox .who{font-size:15px;font-weight:900;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.padbox canvas{display:block;width:100%;height:210px;border:2px dashed #b8c2d6;border-radius:10px;background:#fff;touch-action:none;cursor:crosshair}
+.padbox .tip{font-size:12.5px;color:var(--sub);margin-top:6px}
+.ov-foot{display:flex;gap:8px;justify-content:space-between;margin-top:16px;position:sticky;bottom:0;padding:10px 0 calc(6px + env(safe-area-inset-bottom,0px));background:#f4f6fa}
+.ov-foot button{font-size:15px;padding:12px 18px}
+.ov-err{color:var(--warn);font-weight:700;font-size:13.5px;margin:6px 0 0;min-height:1em}
+.sp-guide{margin-top:10px;font-size:12.5px;line-height:1.65;background:#f3f6fc;border:1px solid #d9e2f3;border-radius:8px;padding:9px 11px}
+.sp-guide ol{margin:0;padding-left:18px}
+.bnav{display:none}
+@media (max-width:900px){
+  .bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:6px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(20,30,60,.08)}
+  .bnav button{flex:1;font-size:14px;padding:10px 6px}
+  body{padding-bottom:72px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>보험금 청구서 <em>자동작성</em></h1>
+    <div class="note">입력값·서명·첨부는 이 폰 안에서만 처리 · 저장 안 함 · 앱을 닫으면 사라짐 (팩스번호만 이 폰에 저장)</div>
+  </div>
+  <div class="btns">
+    <button class="primary" id="btnInstall" hidden>앱 설치</button>
+    <span class="chip off" id="srvChip" title="팩스 자동발송 연결 상태" hidden>자동발송 꺼짐</span>
+    <button class="ghost" id="btnSample">예시 채우기</button>
+    <button class="ghost" id="btnClear">전체 지우기</button>
+    <button class="primary" id="btnPrintAll">전체 서명용 PDF</button>
+  </div>
+</div>
+
+<div class="wrap">
+<aside class="panel">
+
+  <div class="sec">
+    <h2><b>1</b>계약자</h2>
+    <div class="row"><label for="c_name">이름</label><input type="text" id="c_name" data-k></div>
+    <div class="row"><label for="c_rrn">주민번호</label><input type="text" id="c_rrn" data-k placeholder="000000-0000000" autocomplete="off" inputmode="numeric"></div>
+    <div class="row"><label for="c_tel">휴대폰</label><input type="text" id="c_tel" data-k inputmode="tel"></div>
+  </div>
+
+  <div class="sec">
+    <h2><b>2</b>피보험자</h2>
+    <label class="chk"><input type="checkbox" id="same" checked> 계약자와 피보험자가 같습니다</label>
+    <div class="row"><label for="p_name">이름</label><input type="text" id="p_name" data-k></div>
+    <div class="row"><label for="p_rrn">주민번호</label><input type="text" id="p_rrn" data-k autocomplete="off" inputmode="numeric"></div>
+    <div class="row"><label for="p_tel">휴대폰</label><input type="text" id="p_tel" data-k inputmode="tel"></div>
+    <div class="row"><label for="p_job">직장명/<br>하시는 일</label><input type="text" id="p_job" data-k></div>
+    <div class="row"><label for="p_addr">주소</label><input type="text" id="p_addr" data-k></div>
+    <div class="row"><label for="p_mail">이메일</label><input type="text" id="p_mail" data-k inputmode="email"></div>
+    <div class="row"><span class="lb">의료급여<br>수급권자</span>
+      <div class="pills" id="medicaid">
+        <label><input type="radio" name="medicaid" value="아니요">아니요</label>
+        <label><input type="radio" name="medicaid" value="예">예</label>
+      </div></div>
+    <div class="row"><label for="p_guard">법정대리인</label><input type="text" id="p_guard" data-k placeholder="미성년자일 때만 (친권자 이름)"></div>
+    <div class="row"><label for="p_bene">보험수익자</label><input type="text" id="p_bene" data-k placeholder="별도 지정된 경우만"></div>
+  </div>
+
+  <div class="sec">
+    <h2><b>3</b>보상 안내 받으실 분</h2>
+    <div class="row"><span class="lb">보험금 수령인</span>
+      <div class="pills" id="recv">
+        <label><input type="radio" name="recv" value="피보험자" checked>피보험자</label>
+        <label><input type="radio" name="recv" value="계약자">계약자</label>
+      </div></div>
+    <div class="row top"><span class="lb">안내방법</span>
+      <div class="pills" id="notice">
+        <label><input type="checkbox" value="문자메시지" checked>문자메시지</label>
+        <label><input type="checkbox" value="e-mail">e-mail</label>
+        <label><input type="checkbox" value="팩스">팩스</label>
+        <label><input type="checkbox" value="유선(전화)">유선(전화)</label>
+        <label><input type="checkbox" value="우편">우편</label>
+      </div></div>
+    <p class="hint">e-mail을 고르면 이메일이, 우편을 고르면 주소가 청구서 기재란에 자동으로 들어갑니다.</p>
+  </div>
+
+  <div class="sec">
+    <h2><b>4</b>사고 · 병원</h2>
+    <div class="row"><span class="lb">사고유형</span>
+      <div class="pills" id="atype">
+        <label><input type="radio" name="atype" value="질병">질병</label>
+        <label><input type="radio" name="atype" value="상해" checked>상해</label>
+        <label><input type="radio" name="atype" value="교통사고">교통사고</label>
+      </div></div>
+    <div class="row"><span class="lb">청구유형</span>
+      <div class="pills" id="rtype">
+        <label><input type="radio" name="rtype" value="최초청구" checked>최초청구</label>
+        <label><input type="radio" name="rtype" value="동일사고 추가청구">동일사고 추가청구</label>
+      </div></div>
+    <div class="row"><label for="a_date">사고(발병)일</label><input type="date" id="a_date" data-k></div>
+    <div class="row"><label for="a_place">사고장소</label><input type="text" id="a_place" data-k></div>
+    <div class="row"><label for="h_name">병원명</label><input type="text" id="h_name" data-k></div>
+    <div class="row"><label for="h_dept">진료과</label><input type="text" id="h_dept" data-k placeholder="예) 정형외과"></div>
+    <div class="row"><label for="dx">진단명</label><input type="text" id="dx" data-k></div>
+    <div class="row top"><label for="story">사고(내원)<br>경위</label><textarea id="story" data-k></textarea></div>
+
+    <div class="sub-box" id="carBlock" hidden>
+      <div class="cap">교통사고 정보</div>
+      <div class="row"><label for="car_no">본인차량번호</label><input type="text" id="car_no" data-k></div>
+      <div class="row top"><span class="lb">본인 탑승위치</span>
+        <div class="pills" id="seat">
+          <label><input type="radio" name="seat" value="운전석">운전석</label>
+          <label><input type="radio" name="seat" value="조수석">조수석</label>
+          <label><input type="radio" name="seat" value="뒷자리">뒷자리</label>
+          <label><input type="radio" name="seat" value="보행중">보행중</label>
+          <label><input type="radio" name="seat" value="기타">기타</label>
+        </div></div>
+      <div class="row"><span class="lb">자동차보험 접수</span>
+        <div class="pills" id="autoIns">
+          <label><input type="radio" name="autoIns" value="아니요">아니요</label>
+          <label><input type="radio" name="autoIns" value="예">예</label>
+        </div></div>
+      <div class="row"><label for="car_ins">보험사</label><input type="text" id="car_ins" data-k></div>
+      <div class="row"><label for="car_contact">담당자/연락처</label><input type="text" id="car_contact" data-k></div>
+    </div>
+
+    <div class="row top"><span class="lb">청구 담보</span>
+      <div class="pills" id="cov">
+        <label><input type="checkbox" value="실손의료비">실손의료비</label>
+        <label><input type="checkbox" value="입원일당">입원일당</label>
+        <label><input type="checkbox" value="진단비">진단비</label>
+        <label><input type="checkbox" value="수술비">수술비</label>
+        <label><input type="checkbox" value="후유장해">후유장해</label>
+        <label><input type="checkbox" value="사망">사망</label>
+        <label><input type="checkbox" value="비용">비용</label>
+      </div></div>
+    <div class="row"><label for="exclude">보상제외<br>요청 담보</label><input type="text" id="exclude" data-k placeholder="있을 때만 (예: 실손의료비)"></div>
+    <p class="hint">표시하지 않은 담보도 보험사가 지급 가능한 보험금을 모두 검토합니다(양식 안내 문구 기준).</p>
+  </div>
+
+  <div class="sec">
+    <h2><b>5</b>보험금 받을 계좌 · 작성일</h2>
+    <div class="row"><label for="bank">은행</label><input type="text" id="bank" data-k></div>
+    <div class="row"><label for="acct">계좌번호</label><input type="text" id="acct" data-k autocomplete="off" inputmode="numeric"></div>
+    <div class="row"><label for="holder">예금주</label><input type="text" id="holder" data-k></div>
+    <div class="row"><label for="w_date">작성일</label><input type="date" id="w_date" data-k></div>
+    <p class="hint">계좌를 비우면 보험료 납입계좌 또는 최근 지급계좌로 지급될 수 있습니다(삼성화재 양식 안내).</p>
+  </div>
+
+  <div class="sec">
+    <h2><b>6</b>청구할 보험사 <span>(선택한 곳마다 1부씩)</span></h2>
+    <input type="text" class="ins-search" id="insQ" placeholder="보험사 검색">
+    <div class="ins-list" id="insList"></div>
+    <p class="hint"><span class="badge" style="margin:0">공식양식</span> 표시된 곳은 보험사 공식 청구서에 그대로 찍힙니다. 나머지는 표준 양식으로 작성됩니다.</p>
+    <div class="row" style="margin-top:8px"><label for="addIns">직접 추가</label>
+      <div style="display:flex;gap:6px"><input type="text" id="addIns" placeholder="예) ○○공제"><button id="addInsBtn" style="flex:none">추가</button></div></div>
+  </div>
+
+  <div class="sec">
+    <h2><b>7</b>청구 팩스번호</h2>
+    <p class="hint">입력해두면 이 기기에 저장돼 다음부터 자동으로 뜹니다.<br>
+    <span class="warn">⚠ 보상(청구) 접수 팩스번호를 보험사 공지·콜센터로 확인 후 입력하세요.</span> 가입설계동의·계약 서류 팩스번호와 다를 수 있습니다.</p>
+    <div class="faxbox" id="faxBox"></div>
+  </div>
+
+  <div class="sec">
+    <h2><b>8</b>첨부 서류 <span>(진단서·영수증·세부내역서)</span></h2>
+    <label class="drop" for="attIn">＋ 사진 찍기 / 파일 선택 (사진·PDF)
+      <input type="file" id="attIn" accept="image/*,application/pdf" multiple></label>
+    <div class="att-list" id="attList"></div>
+    <p class="hint">팩스에서 청구서·동의서 뒤에 이 순서대로 붙습니다. 사진은 팩스용으로 자동 축소·흑백 처리됩니다.</p>
+  </div>
+
+  <div class="sec">
+    <h2><b>9</b>고객 서명</h2>
+    <div class="statebox" id="signBox"></div>
+  </div>
+
+  <div class="sec" id="srvSec" hidden>
+    <h2><b>10</b>팩스 자동발송 연결</h2>
+    <div class="statebox" id="srvBox"></div>
+  </div>
+
+</aside>
+
+<main class="preview" id="preview"></main>
+</div>
+<div id="offscreen" aria-hidden="true"></div>
+
+<nav class="bnav" aria-label="화면 이동"><button data-go="top">입력</button><button data-go="sign">고객 서명</button><button data-go="preview" class="go">청구서·팩스</button></nav>
+
+<!-- 고객 서명 화면 -->
+<div class="ov" id="signOv" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+  <div class="ov-in">
+    <div class="ov-head"><b id="ovTitle">보험금 청구 서명</b><div class="ov-steps" id="ovSteps"><span></span><span></span><span></span></div></div>
+    <div id="ovBody"></div>
+    <p class="ov-err" id="ovErr"></p>
+    <div class="ov-foot"><button id="ovBack">취소</button><button class="blue" id="ovNext">다음</button></div>
+  </div>
+</div>
+
+<script src="vendor/pdf-lib.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';document.head.appendChild(s)"></script>
+<script src="vendor/html2canvas.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';document.head.appendChild(s)"></script>
+<script>
+// ======================================================================
+//  기본 데이터
+// ======================================================================
+const INS = {
+  "손해보험":["삼성화재","현대해상","DB손해보험","KB손해보험","메리츠화재","한화손해보험","롯데손해보험","흥국화재","NH농협손해보험","하나손해보험","MG손해보험","AXA손해보험","캐롯손해보험","신한EZ손해보험","AIG손해보험","라이나손해보험"],
+  "생명보험":["삼성생명","한화생명","교보생명","신한라이프","NH농협생명","동양생명","ABL생명","미래에셋생명","KB라이프","흥국생명","DB생명","KDB생명","메트라이프생명","라이나생명","AIA생명","푸본현대생명","iM라이프","BNP파리바카디프생명","하나생명","처브라이프","교보라이프플래닛","IBK연금보험"],
+  "공제·기타":["우체국보험","새마을금고공제","수협공제","신협공제","MG새마을금고 공제","군인공제회"]
+};
+const BRAND = {"삼성화재":"#1428A0","메리츠화재":"#E60012","하나손해보험":"#00857A","현대해상":"#F37321","삼성생명":"#1428A0"};
+const FORM_FILES = {"삼성화재":"forms/samsung-fire.js"};   // 공식 양식이 등록된 보험사
+// 공식 양식이 없는 보험사(표준 양식)용 동의 항목
+const GENERIC_CONSENT_UI = [
+  {key:'collect', title:'[필수] 개인(신용)정보 수집·이용', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 수집·이용', desc:'고유식별정보, 민감정보(질병·상해 정보), 개인(신용)정보'}]},
+  {key:'provide', title:'[필수] 개인(신용)정보 제공', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 제공', desc:'보험사 업무수탁자, 손해사정·의료자문 기관 등'}]},
+  {key:'inquire', title:'[필수] 개인(신용)정보 조회', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 조회', desc:'신용정보집중기관, 보험요율산출기관 등'}]}
+];
+const GENERIC_NOTICE = '보험금 청구 심사·지급을 위한 동의입니다. 동의를 거부하실 수 있으나, 필수 항목에 동의하지 않으시면 보험금 청구 업무가 불가능할 수 있습니다. 세부 내용은 각 보험사 동의서 양식을 따릅니다.';
+const FONT = "'Noto Sans KR','Noto Sans CJK KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif";
+
+const custom = [], selected = new Set(), atts = [];
+let fax = {};
+try{ fax = JSON.parse(localStorage.getItem('claimFax')||'{}') }catch(e){ fax = {} }
+function saveFax(){ try{ localStorage.setItem('claimFax', JSON.stringify(fax)) }catch(e){} }
+
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const onlyDigits = s=>String(s||'').replace(/[^0-9]/g,'');
+const validFax = n=>/^0\d{8,11}$/.test(onlyDigits(n));
+function maskName(n){ n=(n||'').trim(); if(n.length<=1) return n; if(n.length===2) return n[0]+'*'; return n[0]+'*'.repeat(n.length-2)+n.slice(-1) }
+function fmtK(d){ if(!d) return ''; const [y,m,dd]=d.split('-'); return `${y}년 ${+m}월 ${+dd}일` }
+function hhmm(t){ return `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}` }
+
+// ======================================================================
+//  입력값
+// ======================================================================
+function val(id){ const el=document.getElementById(id); return el?el.value.trim():'' }
+function radio(n){ const el=document.querySelector(`input[name="${n}"]:checked`); return el?el.value:'' }
+function checks(id){ return [...document.querySelectorAll(`#${id} input:checked`)].map(i=>i.value) }
+function collect(){
+  const same=$('#same').checked;
+  const insured={name:val('p_name'),rrn:val('p_rrn'),tel:val('p_tel'),job:val('p_job'),addr:val('p_addr'),email:val('p_mail')};
+  const holder={name:val('c_name'),rrn:val('c_rrn'),tel:val('c_tel')};
+  if(same){ insured.name=holder.name; insured.rrn=holder.rrn; insured.tel=holder.tel; }
+  const recv=radio('recv'), r=recv==='계약자'?holder:insured, notice=checks('notice');
+  const det=[]; if(notice.includes('e-mail')&&insured.email) det.push(insured.email); if(notice.includes('우편')&&insured.addr) det.push(insured.addr);
+  return {
+    insured, holder, same, medicaid:radio('medicaid'), guardian:val('p_guard'), beneficiary:val('p_bene'),
+    recv, recvName:r.name, recvTel:r.tel, notice, noticeDetail:det.join(' / '),
+    atype:radio('atype'), rtype:radio('rtype'), date:val('a_date'), place:val('a_place'),
+    hospital:val('h_name'), dept:val('h_dept'), dx:val('dx'), story:val('story'),
+    car:{no:val('car_no'),seat:radio('seat'),autoIns:radio('autoIns'),insurer:val('car_ins'),contact:val('car_contact')},
+    cov:checks('cov'), exclude:val('exclude'),
+    bank:val('bank'), acct:val('acct'), acctHolder:val('holder'), writeDate:val('w_date')
+  };
+}
+function missing(d,ins){
+  const m=[];
+  if(!d.insured.name) m.push('피보험자 이름'); if(!d.insured.rrn) m.push('주민번호');
+  if(!d.date) m.push('사고일'); if(!d.dx) m.push('진단명');
+  if(FORM_FILES[ins]&&!d.medicaid) m.push('의료급여 수급권자 여부');
+  if(!d.notice.length) m.push('안내방법');
+  return m;
+}
+
+// ======================================================================
+//  보험사 · 팩스번호
+// ======================================================================
+function renderInsList(){
+  const q=$('#insQ').value.trim(), groups={...INS}; if(custom.length) groups["직접 추가"]=custom;
+  let h='';
+  for(const [g,arr] of Object.entries(groups)){
+    const f=arr.filter(n=>!q||n.includes(q)); if(!f.length) continue;
+    h+=`<div class="ins-grp">${g}</div>`;
+    f.forEach(n=>{h+=`<label class="ins-item"><input type="checkbox" value="${esc(n)}" ${selected.has(n)?'checked':''}><span class="dot" style="background:${BRAND[n]||'#1b2a4e'}"></span>${esc(n)}${FORM_FILES[n]?'<span class="badge">공식양식</span>':''}</label>`});
+  }
+  $('#insList').innerHTML=h||'<div class="hint" style="padding:6px">검색 결과가 없습니다.</div>';
+}
+$('#insList').addEventListener('change',e=>{
+  if(e.target.type!=='checkbox') return;
+  e.target.checked?selected.add(e.target.value):selected.delete(e.target.value);
+  renderFax(); render();
+});
+$('#insQ').addEventListener('input',renderInsList);
+$('#addInsBtn').addEventListener('click',()=>{
+  const n=$('#addIns').value.trim(); if(!n) return;
+  if(!custom.includes(n)) custom.push(n); selected.add(n); $('#addIns').value='';
+  renderInsList(); renderFax(); render();
+});
+function renderFax(){
+  const list=[...selected];
+  if(!list.length){ $('#faxBox').innerHTML='<div class="hint" style="padding:8px">보험사를 먼저 선택하세요.</div>'; return; }
+  $('#faxBox').innerHTML=list.map(n=>`<div class="faxrow ${validFax(fax[n])?'':'empty'}"><span>${esc(n)}</span>
+    <input type="text" data-fax="${esc(n)}" value="${esc(fax[n]||'')}" placeholder="⚠확인필요" inputmode="tel" aria-label="${esc(n)} 청구 팩스번호"><button data-copy="${esc(n)}">복사</button></div>`).join('');
+}
+function setFax(n,v,from){
+  fax[n]=v.trim(); saveFax();
+  document.querySelectorAll('[data-fax]').forEach(i=>{ if(i.dataset.fax===n&&i!==from) i.value=fax[n]; if(i.dataset.fax===n) i.closest('.faxrow')?.classList.toggle('empty',!validFax(fax[n])) });
+  document.querySelectorAll('.sendbar').forEach(b=>{ if(b.dataset.ins===n) b.querySelector('.faxno').textContent=fax[n]||'⚠ 번호 미입력'; });
+  refreshSP(n);
+}
+$('#faxBox').addEventListener('input',e=>{ const n=e.target.dataset.fax; if(n) setFax(n,e.target.value,e.target) });
+$('#faxBox').addEventListener('click',e=>{
+  const n=e.target.dataset.copy; if(!n||!fax[n]) return;
+  const done=()=>{e.target.textContent='완료';setTimeout(()=>e.target.textContent='복사',1200)};
+  navigator.clipboard?.writeText(fax[n]).then(done).catch(()=>{});
+});
+
+// ======================================================================
+//  공식 양식 로딩 · 그리기
+// ======================================================================
+const formCache={};
+function b64Bytes(b){ const s=atob(b); const a=new Uint8Array(s.length); for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i); return a }
+function dataBytes(u){ return b64Bytes(u.split(',')[1]) }
+function loadImg(src){ return new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=src}) }
+function loadForm(ins){
+  if(!FORM_FILES[ins]) return Promise.resolve(null);
+  if(formCache[ins]) return formCache[ins];
+  const prep=()=>{ const F=window.CLAIM_FORMS[ins]; if(!F.bytes) F.bytes=b64Bytes(F.pdf); if(!F.img) F.img=loadImg(F.bg); return F; };
+  formCache[ins]=new Promise((ok,no)=>{
+    if(window.CLAIM_FORMS&&window.CLAIM_FORMS[ins]) return ok(prep());
+    const s=document.createElement('script'); s.src=FORM_FILES[ins];
+    s.onload=()=>window.CLAIM_FORMS&&window.CLAIM_FORMS[ins]?ok(prep()):no(new Error('양식 데이터가 비어 있습니다'));
+    s.onerror=()=>no(new Error(`양식 파일(${FORM_FILES[ins]})을 찾지 못했습니다. index.html과 forms 폴더가 같은 곳에 있어야 합니다.`));
+    document.head.appendChild(s);
+  }).catch(e=>{ delete formCache[ins]; throw e; });
+  return formCache[ins];
+}
+let fontReady=null;
+function fontsReady(){ if(!fontReady) fontReady=Promise.race([document.fonts.load(`400 40px "Noto Sans KR"`).catch(()=>{}),new Promise(r=>setTimeout(r,1500))]).then(()=>document.fonts.ready); return fontReady }
+
+// ops 그리기 (k = 1pt당 픽셀). 칸이 좁으면 글자를 줄이고, 2줄 가능 칸은 7pt 아래로 줄이기 전에 줄바꿈. 그래도 넘치면 잘린 칸으로 보고.
+function drawOps(cx,ops,k){
+  const cut=[];
+  cx.save(); cx.fillStyle='#000'; cx.strokeStyle='#000'; cx.textBaseline='alphabetic';
+  const setF=s=>{ cx.font=`400 ${s*k}px ${FONT}` };
+  const wid=(t,s)=>{ setF(s); return cx.measureText(t).width/k };
+  for(const o of ops){
+    if(o.t==='check'){
+      const z=o.sz||1; cx.lineWidth=1.15*k*(z>1?z*0.75:1); cx.lineCap='round'; cx.lineJoin='round'; cx.beginPath();
+      cx.moveTo((o.cx-2.4*z)*k,(o.cy-0.4*z)*k); cx.lineTo((o.cx-0.7*z)*k,(o.cy+2.1*z)*k); cx.lineTo((o.cx+3.0*z)*k,(o.cy-3.1*z)*k); cx.stroke(); continue;
+    }
+    if(o.t==='img'){
+      if(!o.img) continue;
+      const [x0,y0,x1,y1]=o.box, bw=x1-x0, bh=y1-y0, iw=o.img.width, ih=o.img.height, sc=Math.min(bw/iw,bh/ih), w=iw*sc, h=ih*sc;
+      cx.drawImage(o.img,(x0+(bw-w)/2)*k,(y0+(bh-h)/2)*k,w*k,h*k); continue;
+    }
+    let x,w,align=o.align||'left',y0,y1;
+    if(o.box){ [x,y0,,y1]=o.box; w=o.box[2]-o.box[0]; if(align==='right')x=o.box[2]; if(align==='center')x=(o.box[0]+o.box[2])/2; }
+    else { x=o.x; w=o.w||220; }
+    let s=o.s, lines=[o.v];
+    const minOne=o.wrap?7:5.6;
+    while(s>minOne&&wid(o.v,s)>w) s-=0.25;
+    if(wid(o.v,s)>w&&o.wrap&&o.box){
+      for(s=Math.min(o.s,7.2); s>=5.2; s-=0.2){
+        const ch=[...o.v]; let a='', i=0;
+        while(i<ch.length&&wid(a+ch[i],s)<=w){ a+=ch[i]; i++; }
+        const sp=a.lastIndexOf(' '); if(i<ch.length&&sp>a.length*0.6){ a=a.slice(0,sp); i=sp+1; }
+        const b=ch.slice(i).join('').trim(); lines=[a,b]; if(wid(b,s)<=w) break;
+      }
+    }
+    lines=lines.map(t=>{ if(wid(t,s)<=w) return t; if(!cut.includes(o.k||o.v)) cut.push(o.k||o.v); const c=[...t]; while(c.length&&wid(c.join('')+'…',s)>w)c.pop(); return c.join('')+'…'; });
+    setF(s); cx.textAlign=align;
+    if(o.box){ const mid=(y0+y1)/2, gap=s*1.18; lines.forEach((t,i)=>{ const base=mid+s*0.36+(lines.length>1?(i?gap/2:-gap/2):0); cx.fillText(t,x*k,base*k) }); }
+    else cx.fillText(lines[0],x*k,o.base*k);
+  }
+  cx.restore();
+  return cut;
+}
+async function drawOfficial(el){
+  const ins=el.dataset.ins, msg=el.querySelector('.o-msg');
+  try{
+    const F=await loadForm(ins), img=await F.img; await fontsReady();
+    if(!el.isConnected) return;
+    const cv=el.querySelector('canvas'), cx=cv.getContext('2d'), k=cv.width/F.size[0];
+    const sv=signState(ins);
+    cx.drawImage(img,0,0,cv.width,cv.height);
+    const cut=drawOps(cx,F.fill(collect(),{sign:sv.ok?esign:null})[0]||[],k);
+    msg.innerHTML=`${esc(F.version)} · ${sv.ok?'<b style="color:var(--good)">전자서명 반영됨 (동의 체크는 2·4·5쪽)</b>':esc(F.signGuide)}`+(cut.length?`<br><span class="warn">⚠ 글자가 길어 잘린 칸: ${esc(cut.join(', '))}</span>`:'');
+  }catch(e){ msg.innerHTML=`<span class="warn">${esc(e.message)}</span>` }
+}
+const K300=300/72;
+async function overlayPng(ops,size){
+  const cv=document.createElement('canvas'); cv.width=Math.round(size[0]*K300); cv.height=Math.round(size[1]*K300);
+  await fontsReady(); const cut=drawOps(cv.getContext('2d'),ops,K300);
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  return {png:new Uint8Array(await blob.arrayBuffer()),cut};
+}
+
+// ======================================================================
+//  표준 양식 (공식 양식 미등록 보험사)
+// ======================================================================
+function box(list,opts){ return opts.map(o=>`<span class="cb">${list.includes(o)?'☑':'☐'} ${o}</span>`).join('') }
+function fmtDate(d){ if(!d) return '&nbsp;&nbsp;&nbsp;&nbsp;년&nbsp;&nbsp;&nbsp;월&nbsp;&nbsp;&nbsp;일'; return fmtK(d) }
+function tint(hex){ const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,m=c=>Math.round(c*.09+255*.91); return `rgb(${m(r)},${m(g)},${m(b)})` }
+function groupAgree(e,key){ const v=Object.values(e.consents[key]||{}); if(!v.length) return null; if(v.every(x=>x===true)) return true; if(v.some(x=>x===false)) return false; return null }
+function agreeBoxes(e,key){ const a=e?groupAgree(e,key):null; return `${a===true?'☑':'☐'} 동의함 ${a===false?'☑':'☐'} 동의하지 않음` }
+function sheet(ins,opt={}){
+  const d=collect(), V=v=>`<span class="v">${esc(v)}</span>`, e=opt.sign||null;
+  const others=[...selected].filter(n=>n!==ins), brand=BRAND[ins]||'#1b2a4e', f=fax[ins];
+  const sig=role=>e&&e.mainRole===role?`<img src="${e.mainURL}" alt="서명">`:'';
+  const car=d.atype==='교통사고'?`<tr><th>교통사고 정보</th><td colspan="3">차량번호 ${V(d.car.no)} · 탑승위치 ${box([d.car.seat],['운전석','조수석','뒷자리','보행중','기타'])} · 자동차보험 접수 ${box([d.car.autoIns],['아니요','예'])} ${d.car.insurer?`(${V(d.car.insurer)} ${V(d.car.contact)})`:''}</td></tr>`:'';
+  return `<section class="sheet" style="--brand:${brand};--brand-bg:${tint(brand)}">
+  <div class="sh-head"><div class="sh-co">${esc(ins)}</div><div class="sh-title">보험금 청구서</div>
+    <div class="sh-fax">청구 접수 팩스<br><b>${f?esc(f):'(팩스번호 미입력)'}</b></div></div>
+  <div class="sh-h3">1. 인적사항 및 보상안내 받으실 분</div>
+  <table class="f"><colgroup><col style="width:15%"><col style="width:13%"><col style="width:22%"><col style="width:13%"><col style="width:37%"></colgroup>
+    <tr><th rowspan="4">피보험자</th><th>성명</th><td>${V(d.insured.name)}</td><th>주민번호</th><td>${V(d.insured.rrn)}</td></tr>
+    <tr><th>연락처</th><td>${V(d.insured.tel)}</td><th>이메일</th><td>${V(d.insured.email)}</td></tr>
+    <tr><th>직장명/하시는 일</th><td>${V(d.insured.job)}</td><th>의료급여 수급권자</th><td>${box([d.medicaid],['예','아니요'])}</td></tr>
+    <tr><th>주소</th><td colspan="3">${V(d.insured.addr)}</td></tr>
+    <tr><th>계약자</th><th>성명</th><td>${V(d.holder.name)}</td><th>주민번호</th><td>${V(d.holder.rrn)}</td></tr>
+    <tr><th>보상안내</th><th>수령인</th><td>${V(d.recvName)} ${V(d.recvTel)}</td><th>안내방법</th><td>${box(d.notice,['문자메시지','e-mail','팩스','유선(전화)','우편'])}${d.noticeDetail?'<br>'+V(d.noticeDetail):''}</td></tr>
+  </table>
+  <div class="sh-h3">2. 다른 보험회사 가입사항 <span style="font-weight:400;font-size:8pt">(손해·생명·공제 포함)</span></div>
+  <table class="f"><colgroup><col style="width:15%"><col></colgroup>
+    <tr><th>보험회사</th><td>${others.length?others.map((n,i)=>`<span class="cb">${i+1}. ${V(n)}</span>`).join(''):'<span class="cb">☐ 다른 보험회사 가입사항 없음</span>'}</td></tr></table>
+  <div class="sh-h3">3. 청구사항</div>
+  <table class="f"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col style="width:35%"></colgroup>
+    <tr><th>사고 유형</th><td>${box([d.atype],['질병','상해','교통사고'])}</td><th>청구 유형</th><td>${box([d.rtype],['최초청구','동일사고 추가청구'])}</td></tr>
+    <tr><th>사고(발병)일</th><td><span class="v">${fmtDate(d.date)}</span></td><th>진단명</th><td>${V(d.dx)}</td></tr>
+    <tr><th>사고장소</th><td>${V(d.place)}</td><th>병원(진료과)</th><td>${V(d.hospital)}${d.dept?' ('+V(d.dept)+')':''}</td></tr>
+    <tr><th>사고(내원) 경위</th><td colspan="3" style="height:16mm;vertical-align:top">${V(d.story)}</td></tr>${car}
+    <tr><th>청구 담보</th><td colspan="3">${box(d.cov,['실손의료비','입원일당','진단비','수술비','후유장해','사망','비용'])}${d.exclude?`<br>☑ 특정담보 보상제외 요청: ${V(d.exclude)}`:''}</td></tr>
+  </table>
+  <p class="small">※ 표시 여부와 관계없이 지급 가능한 보험금 검토 여부는 회사 기준에 따릅니다.</p>
+  <div class="sh-h3">4. 보험금 수령 계좌</div>
+  <table class="f"><colgroup><col style="width:15%"><col style="width:20%"><col style="width:12%"><col style="width:28%"><col style="width:10%"><col style="width:15%"></colgroup>
+    <tr><th>은행명</th><td>${V(d.bank)}</td><th>계좌번호</th><td>${V(d.acct)}</td><th>예금주</th><td>${V(d.acctHolder)}</td></tr></table>
+  <div class="agree"><b>개인(신용)정보 수집·이용·제공 및 조회 동의</b><br>
+    보험금 청구 심사·지급을 위한 개인(신용)정보 및 민감정보(질병·상해 정보)의 수집·이용·조회·제공 동의는 ${esc(ins)}의 보험금 청구 동의서 양식을 따릅니다.<br>
+    <span class="cb">수집·이용 ${agreeBoxes(e,'collect')}</span><span class="cb">조회 ${agreeBoxes(e,'inquire')}</span><span class="cb">제공 ${agreeBoxes(e,'provide')}</span><br>
+    <span style="color:#555">※ ${e?'고객이 서명 화면에서 직접 선택한 내용입니다.':'동의 체크와 서명은 고객이 직접 작성합니다.'}</span></div>
+  <div class="sign"><span>작성일 ${d.writeDate?fmtK(d.writeDate):''}</span><span>피보험자 <span class="line">${esc(d.insured.name)} ${sig('피보험자')}</span> (서명)</span></div>
+  <div class="sign" style="margin-top:6px"><span>법정대리인 <span class="line">${esc(d.guardian)} ${sig('법정대리인')}</span> (서명)</span><span>보험수익자 <span class="line">${esc(d.beneficiary)} ${e&&e.bene?`<img src="${e.beneURL}" alt="서명">`:''}</span> (서명)</span></div>
+  <div class="sh-foot"><span>표준 양식 · 보험사 공식 양식 요구 시 해당 양식 사용</span><span>${esc(ins)} 제출용</span></div>
+</section>`;
+}
+async function sheetJpeg(ins,opt){
+  const holder=$('#offscreen'); holder.innerHTML=sheet(ins,opt); await document.fonts.ready;
+  await Promise.all([...holder.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
+  const cv=await html2canvas(holder.firstElementChild,{scale:2,backgroundColor:'#ffffff',logging:false});
+  holder.innerHTML=''; return dataBytes(cv.toDataURL('image/jpeg',0.85));
+}
+
+// ======================================================================
+//  고객 전자서명
+// ======================================================================
+let esign=null;   // {consents, main, mainURL, mainRole, mainName, bene, beneURL, beneName, at, hash, insurers}
+const signHash=()=>JSON.stringify(collect());
+function signState(ins){
+  if(!esign) return {ok:false, why:'고객 서명이 없습니다'};
+  if(esign.hash!==signHash()) return {ok:false, why:'서명 후 청구 내용이 바뀌었습니다 — 고객 확인 후 다시 서명', changed:true};
+  if(ins&&!esign.insurers.includes(ins)) return {ok:false, why:'이 보험사는 서명받을 때 목록에 없었습니다 — 다시 서명'};
+  return {ok:true};
+}
+function renderSignBox(){
+  const b=$('#signBox');
+  if(!esign){
+    b.innerHTML=`<span class="chip off">서명 전</span>
+      <div class="hint" style="margin-top:6px">입력과 보험사 선택을 마친 뒤 폰을 고객에게 건네면, 고객이 청구 내용을 확인하고 동의 항목을 직접 고른 다음 서명합니다. 서명은 이 화면에만 있고 저장되지 않습니다.</div>
+      ${signMsg?`<div class="warn" style="margin-top:6px">${esc(signMsg)}</div>`:''}
+      <div class="acts"><button class="blue" id="btnSign">고객 서명 받기</button></div>`;
+  } else {
+    const s=signState(), req=['collect','provide','inquire'].flatMap(g=>Object.values(esign.consents[g]||{}));
+    const yes=req.filter(v=>v===true).length, o=esign.consents.optional||{}, optTxt=(o.sens==null&&o.credit==null)?'선택 안 함':Object.values(o).map(v=>v===true?'동의':v===false?'미동의':'-').join('/');
+    b.innerHTML=`${s.ok?'<span class="chip ok">서명 완료</span>':`<span class="chip bad">다시 서명 필요</span>`}
+      <div style="margin-top:6px">${esc(esign.mainRole)} ${esc(esign.mainName)}${esign.bene?` · 보험수익자 ${esc(esign.beneName)}`:''} · ${hhmm(esign.at)}<br>
+      필수 동의 ${yes}/${req.length} · 선택 동의 ${esc(optTxt)}<br>대상: ${esc(esign.insurers.join(', '))}</div>
+      ${s.ok?'':`<div class="warn" style="margin-top:4px">${esc(s.why)}</div>`}
+      ${yes<req.length?'<div class="warn" style="margin-top:4px">필수 항목 중 동의하지 않은 항목이 있어 청구 처리가 안 될 수 있습니다.</div>':''}
+      <div class="acts"><button class="blue" id="btnSign">${s.ok?'다시 받기':'다시 서명 받기'}</button><button id="btnUnsign">서명 지우기</button></div>`;
+  }
+}
+$('#signBox').addEventListener('click',e=>{
+  if(e.target.id==='btnSign') openSign();
+  if(e.target.id==='btnUnsign'){ esign=null; render(); }
+});
+
+// 서명 패드
+class Pad{
+  constructor(cv){
+    this.cv=cv; this.ctx=cv.getContext('2d'); this.pts=0; this.down=false; this.fit();
+    cv.addEventListener('pointerdown',e=>{ e.preventDefault(); try{cv.setPointerCapture(e.pointerId)}catch(_){} this.down=true; this.last=this.pos(e); this.dot(this.last); const er=document.getElementById('ovErr'); if(er) er.textContent=''; });
+    cv.addEventListener('pointermove',e=>{
+      if(!this.down) return; e.preventDefault();
+      const p=this.pos(e), c=this.ctx, m={x:(this.last.x+p.x)/2,y:(this.last.y+p.y)/2};
+      c.beginPath(); c.moveTo(this.mid?this.mid.x:this.last.x,this.mid?this.mid.y:this.last.y); c.quadraticCurveTo(this.last.x,this.last.y,m.x,m.y); c.stroke();
+      this.mid=m; this.last=p; this.pts++;
+    });
+    const up=()=>{ this.down=false; this.mid=null };
+    cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+  }
+  fit(){ const r=this.cv.getBoundingClientRect(), dpr=Math.max(1,window.devicePixelRatio||1); this.cv.width=Math.round(r.width*dpr); this.cv.height=Math.round(r.height*dpr);
+    const c=this.ctx; c.setTransform(dpr,0,0,dpr,0,0); c.lineWidth=2.8; c.lineCap='round'; c.lineJoin='round'; c.strokeStyle='#111'; c.fillStyle='#111'; this.pts=0; this.w=r.width }
+  pos(e){ const r=this.cv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top} }
+  dot(p){ const c=this.ctx; c.beginPath(); c.arc(p.x,p.y,1.4,0,Math.PI*2); c.fill(); }
+  clear(){ const c=this.ctx; c.save(); c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,this.cv.width,this.cv.height); c.restore(); this.pts=0 }
+  empty(){ return this.pts<12 }
+  trimmed(){
+    const w=this.cv.width, h=this.cv.height, d=this.ctx.getImageData(0,0,w,h).data; let x0=w,y0=h,x1=-1,y1=-1;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(d[(y*w+x)*4+3]>16){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    if(x1<0) return null; const p=8; x0=Math.max(0,x0-p); y0=Math.max(0,y0-p); x1=Math.min(w-1,x1+p); y1=Math.min(h-1,y1+p);
+    const out=document.createElement('canvas'); out.width=x1-x0+1; out.height=y1-y0+1;
+    out.getContext('2d').drawImage(this.cv,x0,y0,out.width,out.height,0,0,out.width,out.height); return out;
+  }
+}
+
+const OV={step:1, consents:null, pads:[], ui:null, F:null};
+function blankConsents(ui,optUI){ const c={}; ui.forEach(g=>{ c[g.key]={}; g.items.forEach(i=>c[g.key][i.k]=null) }); c.optional={}; if(optUI) optUI.items.forEach(i=>c.optional[i.k]=null); return c }
+let signMsg='';
+async function openSign(){
+  const d=collect();
+  const need=[]; if(!d.insured.name) need.push('피보험자 이름'); if(!selected.size) need.push('청구할 보험사');
+  if(need.length){ signMsg=`먼저 입력하세요: ${need.join(', ')}`; renderSignBox(); return signMsg; }
+  signMsg='';
+  OV.F=null;
+  const off=[...selected].find(n=>FORM_FILES[n]);
+  if(off){ try{ OV.F=await loadForm(off) }catch(e){ OV.F=null } }
+  OV.ui=OV.F?OV.F.consentUI:GENERIC_CONSENT_UI;
+  OV.optUI=OV.F?OV.F.optionalUI:null;
+  OV.consents=blankConsents(OV.ui,OV.optUI);
+  OV.step=1; OV.pads=[]; OV.showDocs=false;
+  $('#signOv').hidden=false; document.body.classList.add('locked'); showStep();
+  return '';
+}
+function closeSign(){ $('#signOv').hidden=true; document.body.classList.remove('locked'); OV.pads=[] }
+function showStep(){
+  const d=collect(), b=$('#ovBody'); $('#ovErr').textContent='';
+  [...$('#ovSteps').children].forEach((s,i)=>s.classList.toggle('on',i<OV.step));
+  $('#ovBack').textContent=OV.step===1?'취소':'이전';
+  if(OV.step===1){
+    const acct=d.bank||d.acct?`${esc(d.bank)} ${d.acct?'****'+esc(onlyDigits(d.acct).slice(-4)):''} (예금주 ${esc(d.acctHolder)})`:'미기재 (보험료 납입계좌 등으로 지급될 수 있음)';
+    b.innerHTML=`<h3>청구 내용 확인</h3>
+      <p class="lead"><b>${esc(d.insured.name)}</b> 고객님, 아래 내용으로 보험금을 청구합니다. 맞는지 확인해 주세요.</p>
+      <table class="sum">
+        <tr><th>피보험자</th><td>${esc(d.insured.name)}${d.guardian?` (법정대리인 ${esc(d.guardian)})`:''}</td></tr>
+        <tr><th>사고(발병)일</th><td>${esc(fmtK(d.date))||'-'} · ${esc(d.atype)}</td></tr>
+        <tr><th>병원 · 진단명</th><td>${esc(d.hospital)}${d.dept?` (${esc(d.dept)})`:''}<br>${esc(d.dx)}</td></tr>
+        <tr><th>청구 담보</th><td>${esc(d.cov.join(', '))||'표시 안 함 (지급 가능한 보험금 전체 검토)'}</td></tr>
+        <tr><th>받으실 계좌</th><td>${acct}</td></tr>
+        <tr><th>청구 보험사</th><td>${esc([...selected].join(', '))}</td></tr>
+      </table>`;
+    $('#ovNext').textContent='내용이 맞습니다';
+  }
+  if(OV.step===2){
+    const notice=OV.F?OV.F.requiredNotice:GENERIC_NOTICE;
+    const grp=(g,opt)=>`<div class="cg"><h4>${esc(g.title)}</h4>${g.desc?`<p class="gdesc">${esc(g.desc)}</p>`:''}
+      ${g.items.map(it=>{ const v=OV.consents[g.key][it.k]; return `<div class="ci"><div class="lab">${esc(it.label)}${it.desc?`<small>${esc(it.desc)}</small>`:''}</div>
+        <div class="tog" role="group" aria-label="${esc(it.label)}"><button class="yes ${v===true?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="1" aria-pressed="${v===true}">동의함</button><button class="no ${v===false?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="0" aria-pressed="${v===false}">동의하지 않음</button></div></div>` }).join('')}</div>`;
+    b.innerHTML=`<h3>개인(신용)정보 처리 동의</h3>
+      <div class="notice">${esc(notice)}</div>
+      ${OV.F?`<button id="ovDocs" style="width:100%;margin-bottom:12px">${OV.showDocs?'동의서 전문 닫기':'동의서 전문 보기 (삼성화재 2~6쪽)'}</button>${OV.showDocs?`<div class="docs">${OV.F.docs.map((s,i)=>`<img src="${s}" alt="동의서 ${i+2}쪽">`).join('')}</div>`:''}`:''}
+      <button class="blue allbtn" id="ovAll">[필수] 항목 모두 동의함</button>
+      ${OV.ui.map(g=>grp(g)).join('')}
+      ${OV.optUI?grp(OV.optUI,true)+'<p class="hint" style="margin-top:-4px">[선택] 항목은 고르지 않고 넘어가셔도 됩니다.</p>':''}`;
+    $('#ovNext').textContent='다음';
+  }
+  if(OV.step===3){
+    const roleMain=d.guardian?'법정대리인':'피보험자', nameMain=d.guardian||d.insured.name;
+    b.innerHTML=`<h3>서명</h3>
+      <p class="lead">위 청구 내용과 동의 사항을 확인했고, <b>${esc([...selected].join(', '))}</b> 보험금 청구서에 이 서명을 사용하는 데 동의합니다.</p>
+      <div class="padbox"><div class="who"><span>${esc(roleMain)} ${esc(nameMain)}${d.guardian?` <small style="color:var(--sub);font-weight:500">(피보험자 ${esc(d.insured.name)})</small>`:''}</span><button data-clear="0">다시 쓰기</button></div><canvas aria-label="${esc(roleMain)} 서명 칸"></canvas><div class="tip">손가락으로 칸 안에 서명해 주세요.</div></div>
+      ${d.beneficiary?`<div class="padbox"><div class="who"><span>보험수익자 ${esc(d.beneficiary)}</span><button data-clear="1">다시 쓰기</button></div><canvas aria-label="보험수익자 서명 칸"></canvas><div class="tip">보험수익자 본인이 서명해 주세요.</div></div>`:''}`;
+    OV.pads=[...b.querySelectorAll('canvas')].map(c=>new Pad(c));
+    OV.role=roleMain; OV.name=nameMain;
+    $('#ovNext').textContent='서명 완료';
+  }
+  b.scrollIntoView?.({block:'start'}); $('#signOv').scrollTop=0;
+}
+$('#ovBody').addEventListener('click',e=>{
+  const t=e.target;
+  if(t.dataset.g){ OV.consents[t.dataset.g][t.dataset.k]=t.dataset.v==='1'; const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y; }
+  if(t.id==='ovAll'){ OV.ui.forEach(g=>g.items.forEach(i=>OV.consents[g.key][i.k]=true)); const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y; }
+  if(t.id==='ovDocs'){ OV.showDocs=!OV.showDocs; const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y; }
+  if(t.dataset.clear!==undefined){ OV.pads[+t.dataset.clear]?.clear() }
+});
+$('#ovBack').addEventListener('click',()=>{ if(OV.step===1) return closeSign(); OV.step--; showStep() });
+$('#ovNext').addEventListener('click',()=>{
+  if(OV.step===2){
+    const open=OV.ui.flatMap(g=>g.items.filter(i=>OV.consents[g.key][i.k]===null));
+    if(open.length){ $('#ovErr').textContent=`[필수] 항목 ${open.length}개를 아직 고르지 않으셨습니다 (동의함 또는 동의하지 않음).`; return; }
+  }
+  if(OV.step<3){ OV.step++; return showStep() }
+  const empty=OV.pads.findIndex(p=>p.empty());
+  if(empty>=0){ $('#ovErr').textContent=empty===0?'서명 칸에 서명해 주세요.':'보험수익자 서명 칸에 서명해 주세요.'; return; }
+  const d=collect(), main=OV.pads[0].trimmed(), bene=OV.pads[1]?OV.pads[1].trimmed():null;
+  esign={consents:JSON.parse(JSON.stringify(OV.consents)), main, mainURL:main.toDataURL('image/png'), mainRole:OV.role, mainName:OV.name,
+    bene, beneURL:bene?bene.toDataURL('image/png'):null, beneName:d.beneficiary||'', at:new Date(), hash:signHash(), insurers:[...selected]};
+  closeSign(); render();
+});
+window.addEventListener('resize',()=>{ if($('#signOv').hidden||OV.step!==3) return; OV.pads.forEach(p=>{ if(Math.abs(p.cv.getBoundingClientRect().width-p.w)>2){ p.fit(); p.clear(); $('#ovErr').textContent='화면 크기가 바뀌어 서명 칸을 비웠습니다. 다시 서명해 주세요.'; } }) });
+
+// ======================================================================
+//  팩스 자동발송 서버 연결
+// ======================================================================
+const SV={on:false, mode:null, ok:false, info:null, err:'', checking:false};
+const MODE_TXT={DRY:'연습 모드 (실제 발송 없음)', TEST:'팝빌 테스트 환경', REAL:'실발송'};
+function getKey(){ try{ return localStorage.getItem('claimFaxKey')||'' }catch(e){ return '' } }
+function setKey(k){ try{ k?localStorage.setItem('claimFaxKey',k):localStorage.removeItem('claimFaxKey') }catch(e){} }
+async function api(path,opts={}){
+  const r=await fetch(path,{...opts,cache:'no-store',headers:{'X-App-Key':getKey(),'Content-Type':'application/json',...(opts.headers||{})}});
+  let j=null; try{ j=await r.json() }catch(e){}
+  if(r.status===401){ SV.ok=false; SV.err='접속 비밀번호가 맞지 않습니다.'; renderServer(); }
+  return {status:r.status, j:j||{ok:false,message:`서버 응답 오류 (${r.status})`}};
+}
+async function detectServer(){
+  try{ const r=await fetch('api/ping',{cache:'no-store'}); const j=await r.json(); SV.on=!!(j&&j.app==='claim-fax'); SV.mode=j.mode }catch(e){ SV.on=false }
+  renderServer(); if(SV.on&&getKey()) await checkHealth(); else render();
+}
+async function checkHealth(){
+  SV.checking=true; renderServer();
+  try{ const {status,j}=await api('api/health'); if(status===200&&j.ok){ SV.ok=true; SV.info=j; SV.err='' } else if(status!==401){ SV.ok=false; SV.err=j.message||'서버 확인 실패' } }
+  catch(e){ SV.ok=false; SV.err='서버에 연결할 수 없습니다.' }
+  SV.checking=false; renderServer(); render();
+}
+function renderServer(){
+  const chip=$('#srvChip'), box=$('#srvBox');
+  $('#srvSec').hidden=!SV.on; chip.hidden=!SV.on;
+  if(!SV.on){
+    chip.className='chip off'; chip.textContent='자동발송 꺼짐';
+    box.innerHTML=`<span class="chip off">연결 안 됨</span>
+      <div class="hint" style="margin-top:6px">이 화면을 맥미니 팩스 서버 주소(예: http://맥미니IP:8787)로 열면 자동발송이 켜집니다. 지금은 PDF 저장${navigator.canShare?' · 모바일팩스 공유':''}만 쓸 수 있습니다.</div>`;
+    return;
+  }
+  const m=MODE_TXT[SV.mode]||SV.mode;
+  if(!SV.ok){
+    chip.className='chip bad'; chip.textContent='자동발송: 비밀번호 필요';
+    box.innerHTML=`<span class="chip mode">${esc(m)}</span>
+      <div class="row" style="margin-top:8px"><label for="srvKey">접속 비밀번호</label><input type="password" id="srvKey" autocomplete="current-password" placeholder="맥미니 .env의 APP_PASSCODE"></div>
+      ${SV.err?`<div class="warn">${esc(SV.err)}</div>`:''}
+      <div class="acts"><button class="blue" id="srvGo" ${SV.checking?'disabled':''}>${SV.checking?'확인 중…':'연결'}</button></div>
+      <div class="hint">비밀번호는 이 기기에만 저장됩니다.</div>`;
+    return;
+  }
+  const i=SV.info||{};
+  chip.className=SV.mode==='REAL'?'chip ok':'chip mode'; chip.textContent=`자동발송: ${SV.mode==='REAL'?'연결됨':m}`;
+  box.innerHTML=`<span class="chip ok">연결됨</span> <span class="chip ${SV.mode==='REAL'?'ok':'mode'}">${esc(m)}</span>
+    <div style="margin-top:6px">발신번호 ${esc(i.sender||'-')} ${i.senderOk===false?`<span class="warn">· ${esc(i.senderMsg||'등록 확인 필요')}</span>`:i.senderOk?'· 등록 확인':''}<br>
+    ${i.balance!=null?`잔여 포인트 ${Number(i.balance).toLocaleString()}`:'잔여 포인트 -'}${i.unitCost!=null?` · 장당 ${i.unitCost}원`:''} · 1시간 한도 ${i.maxPerHour||'-'}건<br>
+    결과 알림(텔레그램) ${i.notify?'켜짐':'꺼짐'}</div>
+    <div class="acts"><button id="srvRe">다시 확인</button><button id="srvOut">비밀번호 지우기</button></div>`;
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='srvGo'){ const k=$('#srvKey').value.trim(); if(!k){ SV.err='비밀번호를 입력하세요.'; return renderServer() } setKey(k); checkHealth(); }
+  if(e.target.id==='srvRe'){ HEALTH_BUST(); checkHealth(); }
+  if(e.target.id==='srvOut'){ setKey(''); SV.ok=false; SV.info=null; renderServer(); render(); }
+  if(e.target.id==='srvChip'){ $('#srvSec').scrollIntoView({behavior:'smooth',block:'start'}) }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='srvKey'){ e.preventDefault(); $('#srvGo').click() } });
+function HEALTH_BUST(){ SV.info=null }
+
+// ======================================================================
+//  보험사별 발송 패널 상태
+// ======================================================================
+const SP={};
+function sp(ins){ return SP[ins]||(SP[ins]={open:false, src:'esign', scans:[], confirm:false, phase:'idle', text:'', tone:'', receipt:null, rn:null, pages:null, timer:null, last:null, file:null, builtKey:'', mphase:'idle', sentAt:null}) }
+// 팩스용 PDF를 만든 뒤 서명·첨부·서명본이 바뀌면 다시 만들게 하는 표시
+function builtKeyOf(ins){ const S=sp(ins); return JSON.stringify([signHash(), S.src, esign?+esign.at:0, S.scans.map(a=>a.name+':'+a.file.size), atts.map(a=>a.name+':'+a.file.size)]) }
+function canBuild(ins){
+  const S=sp(ins), why=[];
+  if(S.src==='esign'){ const s=signState(ins); if(!s.ok) why.push(s.why); }
+  else if(!S.scans.length) why.push('종이 서명본 사진을 올려주세요');
+  if(!validFax(fax[ins])) why.push('받는 팩스번호를 확인하세요');
+  if(!S.confirm) why.push('받는 곳·팩스번호·서명 확인에 체크하세요');
+  return {ok:!why.length, why};
+}
+function newRN(){ const t=new Date(), p=n=>String(n).padStart(2,'0'); return `CLM${t.getFullYear()}${p(t.getMonth()+1)}${p(t.getDate())}${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}${Math.random().toString(36).slice(2,8)}` }
+function canSend(ins){
+  const S=sp(ins), why=[];
+  if(['building','sending','tracking','checking'].includes(S.phase)) return {ok:false, why:['발송 진행 중입니다']};
+  if(S.phase==='done') return {ok:false, why:[], done:true};
+  if(!SV.on) why.push('자동발송 서버에 연결되어 있지 않습니다 (맥미니 서버 주소로 열어주세요)');
+  else if(!SV.ok) why.push('10번에서 접속 비밀번호로 연결하세요');
+  if(!validFax(fax[ins])) why.push('받는 팩스번호를 확인하세요');
+  if(S.src==='esign'){ const s=signState(ins); if(!s.ok) why.push(s.why); }
+  else if(!S.scans.length) why.push('종이 서명본 사진을 올려주세요');
+  if(!S.confirm) why.push('받는 곳·팩스번호·서명 확인에 체크하세요');
+  return {ok:!why.length, why};
+}
+const PHASE_STEP={0:0,1:1,2:2,3:3,4:3};
+function statusHTML(ins){
+  const S=sp(ins), j=S.last;
+  let steps='';
+  if(S.receipt){ const cur=j&&j.state!=null?PHASE_STEP[j.state]:0; steps=`<div class="sp-steps">${['접수','변환','전송','결과'].map((t,i)=>`<span class="${i<cur?'done':i===cur?'on':''}">${t}</span>`).join('')}</div>`; }
+  return steps+esc(S.text);
+}
+function setSP(ins,text,tone=''){ const S=sp(ins); S.text=text; S.tone=tone; refreshSP(ins) }
+function spHTML(ins){
+  const S=sp(ins), s=signState(ins), off=!!FORM_FILES[ins];
+  if(S.file&&S.builtKey!==builtKeyOf(ins)){ S.file=null; S.sentAt=null; S.text='서명·첨부·서명본이 바뀌어 팩스용 PDF를 다시 만들어야 합니다.'; S.tone='bad'; }
+  const b=canBuild(ins), auto=SV.on&&SV.ok, c=auto?canSend(ins):null, share=!!navigator.canShare;
+  const sigChip=s.ok?`<span class="chip ok">전자서명 완료 ${hhmm(esign.at)}</span>`:`<span class="chip bad">${esc(s.why)}</span>`;
+  const autoBtn=!auto?'':(S.phase==='done'?`<button class="sp-again">자동발송 새로</button>`:`<button class="sp-send" ${c.ok?'':'disabled'}>${S.phase==='failed'?'자동발송 다시':'자동발송(팝빌)'}</button>`);
+  return `<div class="sp" data-ins="${esc(ins)}">
+    <div class="sp-grid">
+      <div class="k">받는 곳</div><div class="v"><b>${esc(ins)}</b> <input type="text" class="sp-fax" data-fax="${esc(ins)}" value="${esc(fax[ins]||'')}" placeholder="청구 팩스번호 ⚠확인필요" inputmode="tel" aria-label="${esc(ins)} 받는 팩스번호"></div>
+      <div class="k">서명본</div><div class="v">
+        <label class="opt-line ${S.src==='esign'?'on':''}"><input type="radio" name="src-${esc(ins)}" value="esign" data-src="${esc(ins)}" ${S.src==='esign'?'checked':''}> 전자서명본 ${sigChip} ${s.ok?'':'<button class="sp-sign">고객 서명 받기</button>'}</label>
+        <label class="opt-line ${S.src==='scan'?'on':''}"><input type="radio" name="src-${esc(ins)}" value="scan" data-src="${esc(ins)}" ${S.src==='scan'?'checked':''}> 종이 서명본 사진 <input type="file" class="sp-scan" data-ins="${esc(ins)}" accept="image/*,application/pdf" multiple> <span>${S.scans.length?`${S.scans.length}장`:''}</span></label>
+      </div>
+      <div class="k">첨부</div><div class="v">${atts.length?`${atts.length}건 (8번 첨부 서류)`:'<span class="warn">없음 — 진단서·영수증을 8번에 올리세요</span>'}${!off?' · <span class="warn">표준 양식: 보험사가 자사 동의서를 따로 요구할 수 있음</span>':''}</div>
+      <div class="k">팩스</div><div class="v">${S.file?`<span class="chip ok">PDF 준비됨 ${S.pages}쪽</span>`:'<span class="chip off">PDF 만들기 전</span>'}${S.sentAt?` <span class="chip ok">보냄 ${hhmm(S.sentAt)}</span>`:''}<span class="hint" style="margin:0;flex-basis:100%">모바일팩스는 쪽마다 MMS 1건으로 나갑니다</span></div>
+    </div>
+    <label class="sp-ok"><input type="checkbox" class="sp-confirm" data-ins="${esc(ins)}" ${S.confirm?'checked':''}> 받는 곳(${esc(ins)})·팩스번호·고객 서명이 맞는지 확인했습니다</label>
+    <div class="sp-acts">
+      ${S.file
+        ?`<button class="primary sp-share">${share?'모바일팩스로 보내기':'PDF 저장 → 모바일팩스'}</button>${share?'<button class="sp-save">PDF 저장</button>':''}<button class="sp-done">${S.sentAt?'보냄 표시됨':'보냈어요'}</button><button class="sp-redo">다시 만들기</button>`
+        :`<button class="primary sp-build" ${b.ok&&S.mphase!=='building'?'':'disabled'}>${S.mphase==='building'?'만드는 중…':'팩스용 PDF 만들기'}</button>`}
+      ${autoBtn}
+    </div>
+    <div class="sp-why">${S.file||b.ok?'':esc(b.why.join(' · '))}</div>
+    ${S.file?`<div class="sp-guide"><ol>
+      <li>${share?'[모바일팩스로 보내기] → 공유창에서 <b>모바일팩스</b> 선택 (팩스번호는 자동 복사)':'[PDF 저장 → 모바일팩스]를 누르면 PDF가 폰에 저장되고 팩스번호가 복사됩니다'}</li>
+      <li>모바일팩스의 받는 번호 칸을 길게 눌러 <b>붙여넣기</b> → 보내기</li>
+      <li>공유창에 모바일팩스가 없으면 [PDF 저장] → 모바일팩스 앱 <b>[팩스발송] → [사진/문서 첨부] → 문서</b>에서 고르기</li>
+      <li>다 보냈으면 [보냈어요] (이 화면에만 표시)</li></ol></div>`:''}
+    <div class="sp-status ${S.tone}">${statusHTML(ins)}</div>
+  </div>`;
+}
+function refreshSP(ins){
+  const el=[...document.querySelectorAll('.sp')].find(x=>x.dataset.ins===ins); if(!el) return;
+  const focus=document.activeElement, keep=focus&&el.contains(focus)&&focus.classList.contains('sp-fax'), pos=keep?focus.selectionStart:0;
+  el.outerHTML=spHTML(ins);
+  if(keep){ const n=[...document.querySelectorAll('.sp-fax')].find(x=>x.dataset.fax===ins); if(n){ n.focus(); try{n.setSelectionRange(pos,pos)}catch(_){} } }
+}
+
+// ======================================================================
+//  미리보기
+// ======================================================================
+function syncSame(){ const on=$('#same').checked; [['p_name','c_name'],['p_rrn','c_rrn'],['p_tel','c_tel']].forEach(([p,c])=>{ const el=$('#'+p); el.disabled=on; if(on) el.value=$('#'+c).value; }) }
+function sendbar(ins){
+  const S=sp(ins);
+  return `<div class="sendbar ${S.open?'':'solo'}" data-ins="${esc(ins)}">
+    <div class="who">${esc(ins)}${FORM_FILES[ins]?'<span class="tag">공식양식</span>':''}<small>팩스 <span class="faxno">${fax[ins]?esc(fax[ins]):'⚠ 번호 미입력'}</span> · 첨부 ${atts.length}건 · ${signState(ins).ok?'서명 완료':'서명 전'}${S.sentAt?` · 보냄 ${hhmm(S.sentAt)}`:''}</small></div>
+    <div class="acts"><button class="pr">서명용 PDF</button><button class="go fx">${S.open?'발송 닫기':'팩스 보내기'}</button></div>
+    <div class="st"></div>
+  </div>${S.open?spHTML(ins):''}`;
+}
+function render(){
+  syncSame();
+  $('#carBlock').hidden = radio('atype')!=='교통사고';
+  renderSignBox();
+  const list=[...selected], pv=$('#preview');
+  if(!list.length){ pv.innerHTML='<div class="empty-prev"><b>6번 \'청구할 보험사\'에서 보험사를 고르세요</b><br>고른 보험사마다 청구서가 1부씩 만들어집니다.<br>처음이면 위의 [예시 채우기]로 둘러보세요.</div>'; return; }
+  pv.innerHTML=list.map(ins=>sendbar(ins)+(FORM_FILES[ins]
+    ?`<div class="official" data-ins="${esc(ins)}"><canvas width="1241" height="1754" aria-label="${esc(ins)} 공식 청구서 미리보기"></canvas><p class="o-msg">공식 양식 불러오는 중…</p></div>`
+    :sheet(ins,{sign:signState(ins).ok?esign:null}))).join('');
+  pv.querySelectorAll('.official').forEach(drawOfficial);
+  fit();
+}
+function fit(){ const pv=$('#preview'); const z=Math.min(1,(pv.clientWidth-40)/794); document.querySelectorAll('#preview .sheet').forEach(s=>s.style.zoom=z) }
+window.addEventListener('resize',fit);
+$('#same').addEventListener('change',render);
+document.querySelector('.panel').addEventListener('input',e=>{
+  const t=e.target; if(t.dataset.fax!==undefined||['insQ','addIns','attIn','same','srvKey'].includes(t.id)||t.closest('#insList')) return;
+  render();
+});
+
+// ======================================================================
+//  첨부 서류
+// ======================================================================
+function fileEntry(f){ return {name:f.name,type:f.type,file:f,url:f.type.startsWith('image/')?URL.createObjectURL(f):null} }
+$('#attIn').addEventListener('change',e=>{
+  for(const f of e.target.files){ if(/^image\/|application\/pdf/.test(f.type)) atts.push(fileEntry(f)) }
+  e.target.value=''; renderAtts(); render();
+});
+function renderAtts(){
+  $('#attList').innerHTML=atts.map((a,i)=>`<div class="att">
+    <div class="th" style="${a.url?`background-image:url(${a.url})`:''}">${a.url?'':'PDF'}</div>
+    <div class="nm">${i+1}. ${esc(a.name)}</div>
+    <div class="ord"><button data-up="${i}" ${i?'':'disabled'} aria-label="위로">▲</button><button data-del="${i}" aria-label="삭제">✕</button></div></div>`).join('');
+}
+$('#attList').addEventListener('click',e=>{
+  const up=e.target.dataset.up, del=e.target.dataset.del;
+  if(up!==undefined){ const i=+up; [atts[i-1],atts[i]]=[atts[i],atts[i-1]]; }
+  else if(del!==undefined){ const [a]=atts.splice(+del,1); if(a.url) URL.revokeObjectURL(a.url); }
+  else return;
+  renderAtts(); render();
+});
+
+// ======================================================================
+//  PDF 만들기
+// ======================================================================
+const A4=[595.28,841.89];
+async function faxImage(a){
+  const im=await loadImg(a.url), s=Math.min(1,2000/Math.max(im.naturalWidth,im.naturalHeight));
+  const cv=document.createElement('canvas'); cv.width=Math.round(im.naturalWidth*s); cv.height=Math.round(im.naturalHeight*s);
+  const cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height); cx.filter='grayscale(1) contrast(1.15)'; cx.drawImage(im,0,0,cv.width,cv.height);
+  return dataBytes(cv.toDataURL('image/jpeg',0.75));
+}
+async function appendClaim(doc,ins,mode,notes,sign){
+  const F=await loadForm(ins);
+  if(F){
+    const src=await PDFLib.PDFDocument.load(F.bytes), idx=mode==='print'?F.printPages:F.faxPages, ops=F.fill(collect(),{sign});
+    const pages=await doc.copyPages(src,idx);
+    for(let i=0;i<pages.length;i++){
+      const pg=doc.addPage(pages[i]), o=ops[idx[i]];
+      if(o&&o.length){ const {png,cut}=await overlayPng(o,F.size); cut.forEach(c=>notes.includes(c)||notes.push(c));
+        pg.drawImage(await doc.embedPng(png),{x:0,y:0,width:pg.getWidth(),height:pg.getHeight()}); }
+    }
+  } else {
+    const img=await doc.embedJpg(await sheetJpeg(ins,{sign}));
+    doc.addPage(A4).drawImage(img,{x:0,y:0,width:A4[0],height:A4[1]});
+  }
+}
+async function appendFiles(doc,list,skipped){
+  for(const a of list){
+    try{
+      if(a.type==='application/pdf'){
+        const src=await PDFLib.PDFDocument.load(await a.file.arrayBuffer());
+        (await doc.copyPages(src,src.getPageIndices())).forEach(p=>doc.addPage(p));
+      }else{
+        const img=await doc.embedJpg(await faxImage(a)), m=24, k=Math.min((A4[0]-2*m)/img.width,(A4[1]-2*m)/img.height), w=img.width*k, h=img.height*k;
+        doc.addPage(A4).drawImage(img,{x:(A4[0]-w)/2,y:(A4[1]-h)/2,width:w,height:h});
+      }
+    }catch(err){ skipped.push(a.name) }
+  }
+}
+function mmdd(){ const t=new Date(); return `${t.getMonth()+1}`.padStart(2,'0')+`${t.getDate()}`.padStart(2,'0') }
+// mode: 'print'(종이 서명용, 서명 없음) | 'fax'(서명본 + 첨부)
+async function buildPdf(ins,mode){
+  const doc=await PDFLib.PDFDocument.create(), notes=[], skipped=[];
+  if(mode==='fax'){
+    const S=sp(ins);
+    if(S.src==='scan') await appendFiles(doc,S.scans,skipped);
+    else await appendClaim(doc,ins,'fax',notes,signState(ins).ok?esign:null);
+    await appendFiles(doc,atts,skipped);
+  } else await appendClaim(doc,ins,'print',notes,null);
+  const name=mode==='fax'?`${ins}_보험금청구_팩스용_${mmdd()}.pdf`:`${ins}_청구서_서명용_${mmdd()}.pdf`;
+  return {file:new File([await doc.save()],name,{type:'application/pdf'}),pages:doc.getPageCount(),notes,skipped};
+}
+function libsOk(){ return !!(window.PDFLib&&window.html2canvas) }
+function summary(r,ins){
+  const m=missing(collect(),ins), out=[`${r.pages}쪽 · ${(r.file.size/1024/1024).toFixed(1)}MB`];
+  if(m.length) out.push(`⚠ 빈 칸: ${m.join(', ')}`);
+  if(r.notes.length) out.push(`⚠ 글자가 길어 잘린 칸: ${r.notes.join(', ')}`);
+  if(r.skipped.length) out.push(`⚠ 열 수 없는 파일 제외: ${r.skipped.join(', ')}`);
+  return out.join(' · ');
+}
+function fileB64(file){ return new Promise((ok,no)=>{ const r=new FileReader(); r.onload=()=>ok(String(r.result).split(',')[1]); r.onerror=()=>no(r.error); r.readAsDataURL(file) }) }
+function download(file){ const u=URL.createObjectURL(file); const a=document.createElement('a'); a.href=u; a.download=file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000) }
+
+// ======================================================================
+//  자동발송 · 결과 추적
+// ======================================================================
+async function autoSend(ins){
+  const S=sp(ins); if(!canSend(ins).ok) return;
+  if(!libsOk()) return setSP(ins,'PDF 도구를 불러오지 못했습니다. 새로고침하세요.','bad');
+  S.phase='building'; S.receipt=null; S.last=null; setSP(ins,'팩스용 PDF 만드는 중…');
+  let r; try{ r=await buildPdf(ins,'fax') }catch(e){ S.phase='failed'; return setSP(ins,'PDF를 만들지 못했습니다: '+e.message,'bad') }
+  if(r.skipped.length){ S.phase='failed'; return setSP(ins,`열 수 없는 파일이 있어 보내지 않았습니다: ${r.skipped.join(', ')} — 8번에서 빼거나 다시 올려주세요.`,'bad') }
+  S.pages=r.pages; if(!S.rn) S.rn=newRN();
+  S.phase='sending'; setSP(ins,`${r.pages}쪽 보내는 중…`);
+  const who=collect().insured.name;
+  let res;
+  try{
+    res=await api('api/fax',{method:'POST',body:JSON.stringify({insurer:ins, receiver:onlyDigits(fax[ins]), requestNum:S.rn,
+      title:`보험금청구 ${ins} ${maskName(who)}`, who, pages:r.pages, pdf:await fileB64(r.file)})});
+  }catch(e){ S.phase='checking'; setSP(ins,'응답이 끊겼습니다. 접수됐는지 확인하는 중…'); return checkByRN(ins) }
+  if(res.j.ok){ S.receipt=res.j.receiptNum; S.phase='tracking'; setSP(ins,`접수됨 · 접수번호 ${S.receipt}`); poll(ins); return; }
+  S.phase='checking'; setSP(ins,`발송 실패 응답: ${res.j.message||''}${res.j.code?` (${res.j.code})`:''} — 접수 여부 확인 중…`,'bad');
+  checkByRN(ins,res.j);
+}
+async function checkByRN(ins,err){
+  const S=sp(ins);
+  try{ const {j}=await api('api/fax/status?rn='+encodeURIComponent(S.rn)); if(j.ok&&j.receiptNum){ S.receipt=j.receiptNum; S.phase='tracking'; S.last=j; setSP(ins,`접수 확인됨 · 접수번호 ${S.receipt}`); return poll(ins) } }catch(e){}
+  S.phase='failed'; S.rn=null;
+  setSP(ins,err?`발송 실패: ${err.message||''}${err.code?` (${err.code})`:''}`:'접수되지 않았습니다. 네트워크 확인 후 다시 보내세요.','bad');
+}
+function resultText(j){
+  if(!j.done) return `${j.stateText||'확인중'}…`;
+  if(j.success) return `전송 완료 · ${j.successPageCnt??'-'}/${j.sendPageCnt??'-'}쪽 · ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`;
+  return `전송 실패 · ${j.resultText||j.stateText}${j.result?` (${j.result})`:''} — 번호를 확인하고 다시 보내세요`;
+}
+function poll(ins){
+  const S=sp(ins); clearInterval(S.timer); const t0=Date.now();
+  S.timer=setInterval(async()=>{
+    if(Date.now()-t0>15*60e3){ clearInterval(S.timer); S.phase='done'; return setSP(ins,'15분 안에 최종 결과가 안 나왔습니다. 텔레그램 알림이나 팝빌 전송내역을 확인하세요.','bad') }
+    let res; try{ res=await api('api/fax/status?receipt='+encodeURIComponent(S.receipt)) }catch(e){ return }
+    const j=res.j; if(!j||!j.ok) return; S.last=j;
+    if(j.done){ clearInterval(S.timer); S.phase=j.success?'done':'failed'; if(!j.success) S.rn=null; }
+    setSP(ins,resultText(j), j.done?(j.success?'good':'bad'):'');
+  }, 3000);
+}
+
+// ======================================================================
+//  미리보기 영역 이벤트
+// ======================================================================
+$('#preview').addEventListener('click',async e=>{
+  const t=e.target, holder=t.closest('[data-ins]'); if(!holder) return;
+  const ins=holder.dataset.ins, S=sp(ins);
+  if(t.classList.contains('pr')){
+    const st=holder.querySelector('.st');
+    if(!libsOk()){ st.textContent='PDF 도구를 불러오지 못했습니다. 새로고침하세요.'; return }
+    t.disabled=true; st.textContent='서명용 PDF 만드는 중…';
+    try{ const r=await buildPdf(ins,'print'); download(r.file);
+      st.textContent=`서명용 PDF 저장 완료 · ${summary(r,ins)} · ${FORM_FILES[ins]?window.CLAIM_FORMS[ins].signGuide:'서명·동의 체크는 고객 직접'}`;
+    }catch(err){ st.textContent='PDF를 만들지 못했습니다: '+err.message }
+    t.disabled=false;
+  }
+  if(t.classList.contains('fx')){ S.open=!S.open; render(); }
+  if(t.classList.contains('sp-sign')){ e.preventDefault(); const m=await openSign(); if(m) setSP(ins,m,'bad'); }
+  if(t.classList.contains('sp-send')) autoSend(ins);
+  if(t.classList.contains('sp-again')){ S.phase='idle'; S.rn=null; S.receipt=null; S.last=null; S.confirm=false; setSP(ins,''); }
+  if(t.classList.contains('sp-build')){
+    if(!libsOk()) return setSP(ins,'PDF 도구를 불러오지 못했습니다. 인터넷에 연결한 뒤 앱을 다시 여세요.','bad');
+    if(!canBuild(ins).ok) return;
+    S.mphase='building'; refreshSP(ins);
+    try{
+      const r=await buildPdf(ins,'fax');
+      S.mphase='idle';
+      if(r.skipped.length) return setSP(ins,`열 수 없는 파일이 있습니다: ${r.skipped.join(', ')} — 8번에서 빼거나 다시 올려주세요.`,'bad');
+      S.file=r.file; S.pages=r.pages; S.builtKey=builtKeyOf(ins); S.sentAt=null;
+      setSP(ins,`팩스용 PDF 준비 완료 · ${summary(r,ins)}`);
+    }catch(err){ S.mphase='idle'; setSP(ins,'PDF를 만들지 못했습니다: '+err.message,'bad') }
+  }
+  if(t.classList.contains('sp-share')){
+    const file=S.file; if(!file) return;
+    // 번호 복사와 공유창은 누른 순간 같이 시작해야 폰이 막지 않는다
+    const clip=navigator.clipboard?navigator.clipboard.writeText(onlyDigits(fax[ins])).then(()=>true,()=>false):Promise.resolve(false);
+    const saved=async why=>{ download(file); const ok=await clip;
+      setSP(ins,`${why}PDF로 저장했습니다 (${file.name})${ok?` · 팩스번호 ${fax[ins]} 복사됨`:''} — 모바일팩스 앱 [팩스발송] → [사진/문서 첨부] → 문서에서 고르세요.`) };
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:file.name}).then(async()=>{
+        const ok=await clip;
+        setSP(ins,`${ok?`팩스번호 ${fax[ins]} 복사됨 · `:`팩스번호 ${fax[ins]} · `}모바일팩스에서 받는 번호 칸에 붙여넣고 보내세요. 보낸 뒤 [보냈어요]를 눌러두면 표시됩니다.`);
+      }).catch(err=>{ if(err&&err.name==='AbortError') return setSP(ins,'공유를 취소했습니다.'); saved('공유창을 열 수 없어 ') });
+    } else saved('');
+  }
+  if(t.classList.contains('sp-save')&&S.file){ download(S.file); setSP(ins,`PDF를 저장했습니다 (${S.file.name}) — 모바일팩스 앱 [팩스발송] → [사진/문서 첨부] → 문서에서 고르세요.`) }
+  if(t.classList.contains('sp-done')&&S.file){ S.sentAt=new Date(); S.text=`보냄 표시 ${hhmm(S.sentAt)} — 전송 결과는 모바일팩스 앱의 보낸 팩스함에서 확인하세요.`; S.tone='good'; render(); }
+  if(t.classList.contains('sp-redo')){ S.file=null; S.sentAt=null; setSP(ins,''); }
+});
+$('#preview').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.src){ sp(t.dataset.src).src=t.value; refreshSP(t.dataset.src); }
+  if(t.classList.contains('sp-confirm')){ sp(t.dataset.ins).confirm=t.checked; refreshSP(t.dataset.ins); }
+  if(t.classList.contains('sp-scan')){ const S=sp(t.dataset.ins); S.scans=[...t.files].filter(f=>/^image\/|application\/pdf/.test(f.type)).map(fileEntry); S.src='scan'; refreshSP(t.dataset.ins); }
+});
+$('#preview').addEventListener('input',e=>{ const t=e.target; if(t.classList.contains('sp-fax')) setFax(t.dataset.fax,t.value,t) });
+
+// ======================================================================
+//  상단 버튼
+// ======================================================================
+$('#btnPrintAll').addEventListener('click',async e=>{
+  const btn=e.currentTarget, old=btn.textContent;
+  if(!selected.size){ btn.textContent='보험사를 먼저 선택하세요'; setTimeout(()=>btn.textContent=old,1500); return; }
+  if(!libsOk()){ btn.textContent='PDF 도구 로딩 실패'; setTimeout(()=>btn.textContent=old,1800); return; }
+  btn.disabled=true; btn.textContent='만드는 중…';
+  try{ const doc=await PDFLib.PDFDocument.create(), notes=[];
+    for(const ins of selected) await appendClaim(doc,ins,'print',notes,null);
+    download(new File([await doc.save()],`${collect().insured.name||'고객'}_청구서_서명용_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
+    btn.textContent=`저장 완료 (${doc.getPageCount()}쪽)`;
+  }catch(err){ btn.textContent='실패: '+err.message }
+  setTimeout(()=>{btn.textContent=old;btn.disabled=false},2200);
+});
+function todayStr(){ const t=new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}` }
+$('#btnClear').addEventListener('click',()=>{
+  if(!confirm('입력한 내용·서명·첨부를 모두 지울까요?')) return;
+  document.querySelectorAll('.panel [data-k]').forEach(el=>el.value='');
+  document.querySelectorAll('.panel .pills input').forEach(i=>i.checked=false);
+  ['recv','rtype'].forEach(n=>{ const f=document.querySelector(`input[name="${n}"]`); if(f) f.checked=true; });
+  document.querySelector('#notice input[value="문자메시지"]').checked=true;
+  document.querySelector('input[name="atype"][value="상해"]').checked=true;
+  $('#w_date').value=todayStr();
+  atts.splice(0).forEach(a=>a.url&&URL.revokeObjectURL(a.url)); renderAtts();
+  esign=null;
+  Object.keys(SP).forEach(k=>{ clearInterval(SP[k].timer); SP[k].scans.forEach(a=>a.url&&URL.revokeObjectURL(a.url)); delete SP[k] });
+  selected.clear(); renderInsList(); renderFax(); render();
+});
+$('#btnSample').addEventListener('click',()=>{
+  const s={c_name:'홍길동',c_rrn:'900101-1234567',c_tel:'010-1234-5678',p_job:'회사원(사무직)',p_addr:'서울시 강서구 마곡동 (예시)',p_mail:'hong@example.com',p_guard:'',p_bene:'',
+    a_date:'2026-10-02',a_place:'자택 계단',h_name:'튼튼정형외과의원',h_dept:'정형외과',dx:'오른쪽 손목 골절',
+    story:'계단에서 넘어져 오른쪽 손목 골절, 정형외과 통원 후 수술',bank:'○○은행',acct:'000-0000-0000 (예시)',holder:'홍길동',w_date:todayStr(),exclude:''};
+  Object.entries(s).forEach(([k,v])=>{ const el=document.getElementById(k); if(el) el.value=v });
+  document.querySelector('input[name="medicaid"][value="아니요"]').checked=true;
+  document.querySelector('input[name="atype"][value="상해"]').checked=true;
+  document.querySelectorAll('#cov input').forEach(i=>i.checked=['실손의료비','진단비','수술비'].includes(i.value));
+  ['삼성화재','메리츠화재'].forEach(n=>selected.add(n));
+  renderInsList(); renderFax(); render();
+});
+
+// 시작: 예시 상태로 열고, 맥미니 서버로 열렸는지 확인
+$('#w_date').value=todayStr();
+renderInsList(); renderFax(); renderAtts(); render();
+detectServer();
+
+// 폰 하단 이동 바
+document.querySelector('.bnav').addEventListener('click',e=>{
+  const go=e.target.dataset.go; if(!go) return;
+  if(go==='top') window.scrollTo({top:0,behavior:'smooth'});
+  if(go==='sign') $('#signBox').closest('.sec').scrollIntoView({behavior:'smooth',block:'start'});
+  if(go==='preview') $('#preview').scrollIntoView({behavior:'smooth',block:'start'});
+});
+// 앱 설치 (안드로이드 크롬)
+let installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('#btnInstall').hidden=false; });
+$('#btnInstall').addEventListener('click',async()=>{ if(!installEvt) return; installEvt.prompt(); try{ await installEvt.userChoice }catch(_){} installEvt=null; $('#btnInstall').hidden=true; });
+window.addEventListener('appinstalled',()=>{ $('#btnInstall').hidden=true });
+// 오프라인에서도 열리게 앱 파일 저장
+if('serviceWorker' in navigator&&(location.protocol==='https:'||['localhost','127.0.0.1'].includes(location.hostname))){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
