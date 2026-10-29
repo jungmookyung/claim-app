@@ -347,7 +347,14 @@ table.f td{font-size:9.4pt}
     <h2><b>7</b>청구 팩스번호</h2>
     <p class="hint">입력해두면 이 기기에 저장돼 다음부터 자동으로 뜹니다.<br>
     <span class="warn">⚠ 보상(청구) 접수 팩스번호를 보험사 공지·콜센터로 확인 후 입력하세요.</span> 가입설계동의·계약 서류 팩스번호와 다를 수 있습니다.</p>
+    <p class="hint">삼성화재는 보상 팩스 <b>0505-161-5040</b>이 기본으로 들어갑니다.</p>
     <div class="faxbox" id="faxBox"></div>
+    <div class="row" style="margin-top:10px"><span class="lb">폰의 모바일팩스 앱</span>
+      <div class="pills" id="mfaxApp">
+        <label><input type="radio" name="mfaxApp" value="com.dho.mobilefax">모바일팩스</label>
+        <label><input type="radio" name="mfaxApp" value="com.dho.mobilefaxlite">모바일팩스(발신전용)</label>
+      </div></div>
+    <p class="hint">[모바일팩스 열기]를 누르면 이 앱이 바로 열립니다. 폰에 깔린 쪽을 고르세요.</p>
   </div>
 
   <div class="sec">
@@ -412,6 +419,21 @@ const custom = [], selected = new Set(), atts = [];
 let fax = {};
 try{ fax = JSON.parse(localStorage.getItem('claimFax')||'{}') }catch(e){ fax = {} }
 function saveFax(){ try{ localStorage.setItem('claimFax', JSON.stringify(fax)) }catch(e){} }
+// 보험사별 기본 보상(청구) 팩스번호 — 앱을 처음 열 때 한 번 채우고, 이후 형이 고친 번호는 그대로 둔다
+const DEFAULT_FAX = {"삼성화재":"0505-161-5040"};
+try{
+  if(localStorage.getItem('claimFaxDefaultsV')!=='1'){ Object.assign(fax, DEFAULT_FAX); saveFax(); localStorage.setItem('claimFaxDefaultsV','1'); }
+}catch(e){}
+Object.keys(DEFAULT_FAX).forEach(k=>{ if(!fax[k]) fax[k]=DEFAULT_FAX[k] });
+// SK브로드밴드 모바일팩스 앱 (안드로이드 패키지)
+const MFAX_APPS = {"com.dho.mobilefax":"모바일팩스","com.dho.mobilefaxlite":"모바일팩스(발신전용)"};
+let mfaxPkg='com.dho.mobilefax';
+try{ const v=localStorage.getItem('claimMfaxPkg'); if(MFAX_APPS[v]) mfaxPkg=v }catch(e){}
+function mfaxIntent(){
+  const fb=encodeURIComponent('https://play.google.com/store/apps/details?id='+mfaxPkg);
+  return `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${mfaxPkg};S.browser_fallback_url=${fb};end`;
+}
+const isAndroid=/Android/i.test(navigator.userAgent);
 
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -895,15 +917,16 @@ function spHTML(ins){
     <label class="sp-ok"><input type="checkbox" class="sp-confirm" data-ins="${esc(ins)}" ${S.confirm?'checked':''}> 받는 곳(${esc(ins)})·팩스번호·고객 서명이 맞는지 확인했습니다</label>
     <div class="sp-acts">
       ${S.file
-        ?`<button class="primary sp-share">${share?'모바일팩스로 보내기':'PDF 저장 → 모바일팩스'}</button>${share?'<button class="sp-save">PDF 저장</button>':''}<button class="sp-done">${S.sentAt?'보냄 표시됨':'보냈어요'}</button><button class="sp-redo">다시 만들기</button>`
+        ?`<button class="primary sp-open">모바일팩스 열기</button>${share?'<button class="sp-share">공유로 보내기</button>':''}<button class="sp-done">${S.sentAt?'보냄 표시됨':'보냈어요'}</button><button class="sp-redo">다시 만들기</button>`
         :`<button class="primary sp-build" ${b.ok&&S.mphase!=='building'?'':'disabled'}>${S.mphase==='building'?'만드는 중…':'팩스용 PDF 만들기'}</button>`}
       ${autoBtn}
     </div>
     <div class="sp-why">${S.file||b.ok?'':esc(b.why.join(' · '))}</div>
     ${S.file?`<div class="sp-guide"><ol>
-      <li>${share?'[모바일팩스로 보내기] → 공유창에서 <b>모바일팩스</b> 선택 (팩스번호는 자동 복사)':'[PDF 저장 → 모바일팩스]를 누르면 PDF가 폰에 저장되고 팩스번호가 복사됩니다'}</li>
-      <li>모바일팩스의 받는 번호 칸을 길게 눌러 <b>붙여넣기</b> → 보내기</li>
-      <li>공유창에 모바일팩스가 없으면 [PDF 저장] → 모바일팩스 앱 <b>[팩스발송] → [사진/문서 첨부] → 문서</b>에서 고르기</li>
+      <li><b>[모바일팩스 열기]</b> → PDF가 폰에 저장되고 팩스번호(${esc(fax[ins]||'')})가 복사된 채로 ${esc(MFAX_APPS[mfaxPkg])} 앱이 열립니다</li>
+      <li>모바일팩스: <b>[팩스발송] → [사진/문서 첨부] → 문서</b> → 방금 저장된 PDF 선택</li>
+      <li>받는 번호 칸을 길게 눌러 <b>붙여넣기</b> → 보내기</li>
+      ${share?'<li>[공유로 보내기]는 공유창에 모바일팩스가 보일 때 쓰면 PDF 첨부까지 한 번에 됩니다</li>':''}
       <li>다 보냈으면 [보냈어요] (이 화면에만 표시)</li></ol></div>`:''}
     <div class="sp-status ${S.tone}">${statusHTML(ins)}</div>
   </div>`;
@@ -943,7 +966,7 @@ function fit(){ const pv=$('#preview'); const z=Math.min(1,(pv.clientWidth-40)/7
 window.addEventListener('resize',fit);
 $('#same').addEventListener('change',render);
 document.querySelector('.panel').addEventListener('input',e=>{
-  const t=e.target; if(t.dataset.fax!==undefined||['insQ','addIns','attIn','same','srvKey'].includes(t.id)||t.closest('#insList')) return;
+  const t=e.target; if(t.dataset.fax!==undefined||['insQ','addIns','attIn','same','srvKey'].includes(t.id)||t.closest('#insList')||t.name==='mfaxApp') return;
   render();
 });
 
@@ -1021,6 +1044,19 @@ async function buildPdf(ins,mode){
   return {file:new File([await doc.save()],name,{type:'application/pdf'}),pages:doc.getPageCount(),notes,skipped};
 }
 function libsOk(){ return !!(window.PDFLib&&window.html2canvas) }
+async function buildFax(ins){
+  const S=sp(ins);
+  if(!libsOk()) return setSP(ins,'PDF 도구를 불러오지 못했습니다. 인터넷에 연결한 뒤 앱을 다시 여세요.','bad');
+  if(!canBuild(ins).ok||S.mphase==='building') return;
+  S.mphase='building'; refreshSP(ins);
+  try{
+    const r=await buildPdf(ins,'fax');
+    S.mphase='idle';
+    if(r.skipped.length) return setSP(ins,`열 수 없는 파일이 있습니다: ${r.skipped.join(', ')} — 8번에서 빼거나 다시 올려주세요.`,'bad');
+    S.file=r.file; S.pages=r.pages; S.builtKey=builtKeyOf(ins); S.sentAt=null;
+    setSP(ins,`팩스용 PDF 준비 완료 · ${summary(r,ins)} — [모바일팩스 열기]를 누르세요`);
+  }catch(err){ S.mphase='idle'; setSP(ins,'PDF를 만들지 못했습니다: '+err.message,'bad') }
+}
 function summary(r,ins){
   const m=missing(collect(),ins), out=[`${r.pages}쪽 · ${(r.file.size/1024/1024).toFixed(1)}MB`];
   if(m.length) out.push(`⚠ 빈 칸: ${m.join(', ')}`);
@@ -1093,17 +1129,13 @@ $('#preview').addEventListener('click',async e=>{
   if(t.classList.contains('sp-sign')){ e.preventDefault(); const m=await openSign(); if(m) setSP(ins,m,'bad'); }
   if(t.classList.contains('sp-send')) autoSend(ins);
   if(t.classList.contains('sp-again')){ S.phase='idle'; S.rn=null; S.receipt=null; S.last=null; S.confirm=false; setSP(ins,''); }
-  if(t.classList.contains('sp-build')){
-    if(!libsOk()) return setSP(ins,'PDF 도구를 불러오지 못했습니다. 인터넷에 연결한 뒤 앱을 다시 여세요.','bad');
-    if(!canBuild(ins).ok) return;
-    S.mphase='building'; refreshSP(ins);
-    try{
-      const r=await buildPdf(ins,'fax');
-      S.mphase='idle';
-      if(r.skipped.length) return setSP(ins,`열 수 없는 파일이 있습니다: ${r.skipped.join(', ')} — 8번에서 빼거나 다시 올려주세요.`,'bad');
-      S.file=r.file; S.pages=r.pages; S.builtKey=builtKeyOf(ins); S.sentAt=null;
-      setSP(ins,`팩스용 PDF 준비 완료 · ${summary(r,ins)}`);
-    }catch(err){ S.mphase='idle'; setSP(ins,'PDF를 만들지 못했습니다: '+err.message,'bad') }
+  if(t.classList.contains('sp-build')) buildFax(ins);
+  if(t.classList.contains('sp-open')&&S.file){
+    // 번호 복사·PDF 저장·앱 열기를 누른 순간에 같이 시작해야 폰이 막지 않는다
+    const clip=navigator.clipboard?navigator.clipboard.writeText(onlyDigits(fax[ins])).then(()=>true,()=>false):Promise.resolve(false);
+    download(S.file);
+    if(isAndroid) setTimeout(()=>{ location.href=mfaxIntent() },700);
+    clip.then(ok=>setSP(ins,`PDF 저장됨 (${S.file.name})${ok?` · 팩스번호 ${fax[ins]} 복사됨`:` · 팩스번호 ${fax[ins]}`} → 모바일팩스 [팩스발송] → [사진/문서 첨부] → 문서 → 방금 저장된 PDF → 번호 칸 길게 눌러 붙여넣기 → 보내기${isAndroid?'':' (모바일팩스 앱 자동 열기는 안드로이드 폰에서만 됩니다)'}`));
   }
   if(t.classList.contains('sp-share')){
     const file=S.file; if(!file) return;
@@ -1125,7 +1157,7 @@ $('#preview').addEventListener('click',async e=>{
 $('#preview').addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.src){ sp(t.dataset.src).src=t.value; refreshSP(t.dataset.src); }
-  if(t.classList.contains('sp-confirm')){ sp(t.dataset.ins).confirm=t.checked; refreshSP(t.dataset.ins); }
+  if(t.classList.contains('sp-confirm')){ const ins=t.dataset.ins, S=sp(ins); S.confirm=t.checked; refreshSP(ins); if(t.checked&&!S.file&&canBuild(ins).ok) buildFax(ins); }
   if(t.classList.contains('sp-scan')){ const S=sp(t.dataset.ins); S.scans=[...t.files].filter(f=>/^image\/|application\/pdf/.test(f.type)).map(fileEntry); S.src='scan'; refreshSP(t.dataset.ins); }
 });
 $('#preview').addEventListener('input',e=>{ const t=e.target; if(t.classList.contains('sp-fax')) setFax(t.dataset.fax,t.value,t) });
@@ -1175,6 +1207,8 @@ $('#btnSample').addEventListener('click',()=>{
 $('#w_date').value=todayStr();
 renderInsList(); renderFax(); renderAtts(); render();
 detectServer();
+{ const r=document.querySelector(`input[name="mfaxApp"][value="${mfaxPkg}"]`); if(r) r.checked=true; }
+$('#mfaxApp').addEventListener('change',e=>{ if(!MFAX_APPS[e.target.value]) return; mfaxPkg=e.target.value; try{ localStorage.setItem('claimMfaxPkg',mfaxPkg) }catch(_){} Object.keys(SP).forEach(refreshSP); });
 
 // 폰 하단 이동 바
 document.querySelector('.bnav').addEventListener('click',e=>{
