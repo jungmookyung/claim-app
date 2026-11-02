@@ -234,6 +234,43 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important;animation:none!important}
 }
+
+/* 서명 단계 */
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg3 .opt > span{font-size:15.5px;padding:8px 6px}
+.lead2{margin:-8px 0 0;color:var(--muted);font-size:16px}
+.note-s{display:block;font-size:14px;color:var(--muted);line-height:1.5}
+.alert.soft{background:var(--brand-soft);color:var(--brand)}
+.sp{display:flex;flex-direction:column;gap:22px}
+.sp[hidden]{display:none!important}
+.paper{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;aspect-ratio:595 / 842;max-width:100%}
+.paper canvas{display:block;width:100%;height:auto}
+.paper-load{position:absolute;inset:0;display:grid;place-items:center;color:#58637B;font-size:15px;background:#F5F6F8}
+.notice-box{margin:0;font-size:14.5px;line-height:1.6;background:var(--field);border-radius:12px;padding:12px 14px;color:var(--muted)}
+.btn.sm{min-height:48px;font-size:16px}
+.docs{display:flex;flex-direction:column;gap:8px}
+.docs img{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+.cgroups{display:flex;flex-direction:column;gap:16px}
+.cg{border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.cg h3{margin:0;font-size:16px;font-weight:700}
+.gdesc{margin:0;font-size:13.5px;color:var(--muted);line-height:1.55}
+.ci{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.ci-lab{font-weight:500;font-size:15.5px;line-height:1.45}
+.ci-lab small{display:block;font-weight:400;font-size:13.5px;color:var(--muted);margin-top:2px}
+.tog{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tog button{min-height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--sheet);font-weight:700;font-size:15px;cursor:pointer;color:var(--ink)}
+.tog button.y[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.tog button.n[aria-pressed="true"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.tog button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.padbox{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}
+.padbox .who{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-bottom:1px solid #E3E6EC;font-weight:700;color:#131C31;font-size:15.5px}
+.padbox .who .more{color:#58637B}
+#pad{display:block;width:100%;height:210px;touch-action:none;background:#fff;cursor:crosshair}
+.padbox .tip{font-size:13px;color:#58637B;text-align:center;padding:6px 0 10px;background:#fff}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.row-btns .btn{flex:1 1 160px;width:auto}
+#sign-fail{display:flex;flex-direction:column;gap:10px}
+#sign-fail p{margin:0}
 </style>
 
 <div class="app" id="app">
@@ -291,7 +328,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
       <input type="text" id="f-web" name="website" class="vh" tabindex="-1" autocomplete="off" aria-hidden="true">
 
       <!-- 1. 기본 정보 -->
-      <section class="step" data-step="1" style="display:contents">
+      <section class="step" data-step="info" style="display:contents">
         <h2 class="q">접수하시는 분 정보를<br>알려주세요</h2>
         <label class="field" for="f-name">
           <span class="lb">이름</span>
@@ -327,23 +364,37 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
             </label>
           </div>
         </div>
+        <label class="field" for="f-birth">
+          <span class="lb" id="birth-lb">생년월일 6자리</span>
+          <input class="in" type="text" id="f-birth" name="birth" inputmode="numeric" placeholder="예) 811014" maxlength="6" autocomplete="off">
+          <span class="err" data-for="f-birth" hidden></span>
+        </label>
         <p class="hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-          주민등록번호는 묻지 않아요. 가입하신 정보로 확인합니다.
+          주민등록번호 뒷자리는 묻지 않아요. 생년월일과 가입하신 정보로 확인합니다.
         </p>
       </section>
 
       <!-- 2. 청구 내용 -->
-      <section class="step" data-step="2" style="display:none">
+      <section class="step" data-step="claim" style="display:none">
         <h2 class="q">어떤 치료를<br>받으셨나요?</h2>
         <fieldset class="field" id="types">
           <legend>치료 종류 <span class="opt-tag">(여러 개 고를 수 있어요)</span></legend>
           <div class="chips" id="type-chips"></div>
           <span class="err" data-for="types" hidden></span>
         </fieldset>
+        <fieldset class="field" id="atype">
+          <legend>어떤 일로 치료받으셨나요?</legend>
+          <div class="seg3">
+            <label class="opt"><input class="vh" type="radio" name="atype" id="f-at-ill" value="질병"><span>질병</span></label>
+            <label class="opt"><input class="vh" type="radio" name="atype" id="f-at-inj" value="상해"><span>다침(상해)</span></label>
+            <label class="opt"><input class="vh" type="radio" name="atype" id="f-at-car" value="교통사고"><span>교통사고</span></label>
+          </div>
+          <span class="err" data-for="atype" hidden></span>
+        </fieldset>
         <div class="row2">
           <label class="field" for="f-date">
-            <span class="lb">진료일</span>
+            <span class="lb">진료일 <span class="opt-tag">(첫 진료일)</span></span>
             <input class="in" type="date" id="f-date" name="date">
             <span class="err" data-for="f-date" hidden></span>
           </label>
@@ -352,6 +403,16 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
             <input class="in" type="text" id="f-hosp" name="hospital" placeholder="○○정형외과" maxlength="40">
           </label>
         </div>
+        <fieldset class="field" id="insurer">
+          <legend>가입하신 보험회사</legend>
+          <div class="seg3">
+            <label class="opt"><input class="vh" type="radio" name="insurer" id="f-co-ss" value="삼성화재"><span>삼성화재</span></label>
+            <label class="opt"><input class="vh" type="radio" name="insurer" id="f-co-other" value="다른 보험회사"><span>다른 회사</span></label>
+            <label class="opt"><input class="vh" type="radio" name="insurer" id="f-co-unk" value="잘 모르겠어요"><span>모르겠어요</span></label>
+          </div>
+          <span class="err" data-for="insurer" hidden></span>
+          <p class="alert soft" id="sign-note" hidden></p>
+        </fieldset>
         <fieldset class="field">
           <legend>보험금 받을 계좌</legend>
           <div class="list">
@@ -383,7 +444,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
       </section>
 
       <!-- 3. 서류 올리기 -->
-      <section class="step" data-step="3" style="display:none">
+      <section class="step" data-step="docs" style="display:none">
         <h2 class="q">서류 사진을<br>올려주세요</h2>
         <div class="need" id="need"></div>
         <div class="pickers">
@@ -408,7 +469,116 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
       </section>
 
       <!-- 4. 확인 및 동의 -->
-      <section class="step" data-step="4" style="display:none">
+      <!-- 청구서 서명 (삼성화재) -->
+      <section class="step" data-step="sign" style="display:none">
+        <div class="sp" data-sp="1">
+          <h2 class="q">삼성화재 청구서에<br>들어갈 내용이에요</h2>
+          <p class="lead2">몇 가지만 더 알려주시면 청구서를 채워드려요.</p>
+          <fieldset class="field" id="medicaid">
+            <legend>의료급여 수급자이신가요?</legend>
+            <div class="seg">
+              <label class="opt"><input class="vh" type="radio" name="medicaid" id="f-med-no" value="아니요"><span>아니요</span></label>
+              <label class="opt"><input class="vh" type="radio" name="medicaid" id="f-med-yes" value="예"><span>예</span></label>
+            </div>
+            <span class="note-s">병원비를 의료급여증으로 내시는 분만 '예'를 골라주세요.</span>
+            <span class="err" data-for="medicaid" hidden></span>
+          </fieldset>
+          <fieldset class="field" id="rtype">
+            <legend>이 일로 보험금을 청구하신 적이 있나요?</legend>
+            <div class="seg">
+              <label class="opt"><input class="vh" type="radio" name="rtype" id="f-rt-first" value="최초청구"><span>처음이에요</span></label>
+              <label class="opt"><input class="vh" type="radio" name="rtype" id="f-rt-add" value="동일사고 추가청구"><span>전에도 했어요</span></label>
+            </div>
+            <span class="err" data-for="rtype" hidden></span>
+          </fieldset>
+          <label class="field" for="f-story">
+            <span class="lb">어디가 어떻게 불편하셨나요?</span>
+            <input class="in" type="text" id="f-story" name="story" maxlength="60" placeholder="예) 감기 몸살로 내과 진료">
+            <span class="err" data-for="f-story" hidden></span>
+          </label>
+          <label class="field" for="f-place" id="place-wrap" hidden>
+            <span class="lb">다친 장소 <span class="opt-tag">(선택)</span></span>
+            <input class="in" type="text" id="f-place" name="place" maxlength="30" placeholder="예) 집 계단">
+          </label>
+          <label class="field" for="f-dx">
+            <span class="lb">진단명 <span class="opt-tag">(선택)</span></span>
+            <input class="in" type="text" id="f-dx" name="dx" maxlength="40" placeholder="처방전이나 진단서에 적힌 병명">
+          </label>
+          <fieldset class="field" id="contractor">
+            <legend>보험료 내시는 분(계약자)은 누구인가요?</legend>
+            <div class="list">
+              <label class="opt"><input class="vh" type="radio" name="contractor" id="f-con-same" value="same"><span>치료받은 분과 같아요</span></label>
+              <label class="opt"><input class="vh" type="radio" name="contractor" id="f-con-other" value="other"><span>다른 분이에요</span></label>
+              <label class="opt"><input class="vh" type="radio" name="contractor" id="f-con-unk" value="unknown"><span>잘 모르겠어요</span></label>
+            </div>
+            <span class="err" data-for="contractor" hidden></span>
+          </fieldset>
+          <label class="field" for="f-cname" id="cname-wrap" hidden>
+            <span class="lb">계약자 성함</span>
+            <input class="in" type="text" id="f-cname" name="contractorName" maxlength="20" placeholder="홍길동">
+            <span class="err" data-for="f-cname" hidden></span>
+          </label>
+          <label class="field" for="f-guard" id="guard-wrap" hidden>
+            <span class="lb">법정대리인(부모님) 성함</span>
+            <input class="in" type="text" id="f-guard" name="guardian" maxlength="20" placeholder="홍길동">
+            <span class="note-s">만 19세 미만이면 법정대리인이 서명해요.</span>
+            <span class="err" data-for="f-guard" hidden></span>
+          </label>
+          <label class="field" for="f-job">
+            <span class="lb">치료받은 분이 하시는 일 <span class="opt-tag">(선택)</span></span>
+            <input class="in" type="text" id="f-job" name="job" maxlength="20" placeholder="예) 회사원, 학생, 주부">
+          </label>
+        </div>
+
+        <div class="sp" data-sp="2" hidden>
+          <h2 class="q">청구서를<br>확인해 주세요</h2>
+          <div class="paper"><canvas id="pv" aria-label="삼성화재 보험금 청구서 1쪽 미리보기"></canvas><div class="paper-load" id="pv-load">청구서를 불러오는 중이에요…</div></div>
+          <p class="hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.3-4.3M11 8v6M8 11h6"/></svg>
+            글자가 작으면 두 손가락으로 크게 보세요. 2~6쪽은 개인정보 동의서라 다음 화면에서 직접 고르시면 돼요.
+          </p>
+        </div>
+
+        <div class="sp" data-sp="3" hidden>
+          <h2 class="q">보험회사 개인정보<br>동의를 골라주세요</h2>
+          <p class="notice-box" id="req-notice"></p>
+          <button type="button" class="btn ghost sm" id="docs-toggle" aria-expanded="false">동의서 전문 보기 (2~6쪽)</button>
+          <div class="docs" id="docs" hidden></div>
+          <button type="button" class="btn sm" id="agree-req">[필수] 항목 모두 동의함</button>
+          <div id="cgroups" class="cgroups"></div>
+          <span class="err" data-for="cgroups" hidden></span>
+        </div>
+
+        <div class="sp" data-sp="4" hidden>
+          <h2 class="q">서명해 주세요</h2>
+          <p class="lead2" id="sign-lead"></p>
+          <p class="alert soft" id="sign-handover" hidden></p>
+          <div class="padbox">
+            <div class="who"><span id="sign-who"></span><button type="button" class="more" id="pad-clear">다시 쓰기</button></div>
+            <canvas id="pad" aria-label="서명 칸"></canvas>
+            <div class="tip">칸 안에 손가락으로 서명해 주세요</div>
+          </div>
+          <span class="err" data-for="pad" hidden></span>
+        </div>
+
+        <div class="sp" data-sp="5" hidden>
+          <h2 class="q">서명이 들어간<br>청구서예요</h2>
+          <div class="paper"><canvas id="pv2" aria-label="서명이 들어간 청구서 1쪽"></canvas></div>
+          <p class="hint" id="signed-info"></p>
+          <div class="row-btns">
+            <button type="button" class="btn ghost sm" id="resign">다시 서명하기</button>
+            <button type="button" class="btn ghost sm" id="open-pdf" hidden>PDF로 열어보기 (미리보기 전용)</button>
+          </div>
+        </div>
+
+        <div class="alert" id="sign-fail" hidden>
+          <p id="sign-fail-msg"></p>
+          <button type="button" class="btn ghost sm" id="sign-skip">서명 없이 계속하기</button>
+        </div>
+      </section>
+
+      <!-- 확인 및 동의 -->
+      <section class="step" data-step="confirm" style="display:none">
         <h2 class="q">내용을 확인하고<br>접수해주세요</h2>
         <dl class="sum" id="sum"></dl>
         <div class="agree-box">
@@ -420,7 +590,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
           </div>
           <div class="terms" id="t-privacy" hidden>
             <dl>
-              <dt>항목</dt><dd>이름, 휴대폰 번호, 치료받은 분 이름·관계, 진료일, 병원명, 보험금 받을 계좌(바꾸는 경우)</dd>
+              <dt>항목</dt><dd>이름, 휴대폰 번호, 생년월일, 치료받은 분 이름·관계, 계약자·법정대리인 성명, 하시는 일, 진료일, 병원명, 보험금 받을 계좌(바꾸는 경우), 청구서 서명</dd>
               <dt>목적</dt><dd>보험금 청구 접수와 보험회사 청구 대행</dd>
               <dt>보관</dt><dd class="retention"></dd>
             </dl>
@@ -433,7 +603,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
           </div>
           <div class="terms" id="t-sensitive" hidden>
             <dl>
-              <dt>항목</dt><dd>진료비 영수증·세부내역서·진단서 등 올려주신 서류에 담긴 진료와 건강 정보</dd>
+              <dt>항목</dt><dd>올려주신 진료비 영수증·세부내역서·진단서 등의 진료 정보, 입력하신 증상·진단명·의료급여 여부</dd>
               <dt>목적</dt><dd>보험금 청구 접수와 보험회사 청구 대행</dd>
               <dt>보관</dt><dd class="retention"></dd>
             </dl>
@@ -448,7 +618,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
             <dl>
               <dt>받는 곳</dt><dd>가입하신 보험회사</dd>
               <dt>목적</dt><dd>보험금 청구 심사와 지급</dd>
-              <dt>항목</dt><dd>위 정보와 올려주신 서류</dd>
+              <dt>항목</dt><dd>위 정보, 올려주신 서류, 서명하신 청구서·동의서</dd>
               <dt>보관</dt><dd>받는 보험회사의 보관 기준에 따름</dd>
             </dl>
             <p>동의하지 않으셔도 되지만, 이 경우 이 페이지로는 접수할 수 없어요.</p>
@@ -526,8 +696,13 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
     AGENT_TITLE: '설계사',
     AGENT_ORG: '',                // 예) 정무경보험대리점
     AGENT_PHOTO: '',              // 프로필 사진 주소(선택)
-    RETENTION: '보험금 청구가 끝난 뒤 3개월 이내 파기'
+    RETENTION: '보험금 청구가 끝난 뒤 3개월 이내 파기',
+    FORM_URL: '../forms/samsung-fire.js',     // 청구서앱의 삼성화재 공식 양식
+    PDFLIB_URL: '../vendor/pdf-lib.min.js',
+    PDFLIB_CDN: 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js'
   };
+  const SIGN_INS = '삼성화재';
+  const FONT = "'Noto Sans KR','Noto Sans CJK KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif";
 
   const DOCS = {
     '통원·약국': ['진료비 영수증', '진료비 세부산정내역서', '약제비 영수증(약국 이용 시)'],
@@ -538,14 +713,15 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
     '기타': []
   };
   const BANKS = ['KB국민','신한','우리','하나','NH농협','IBK기업','카카오뱅크','토스뱅크','케이뱅크','SC제일','우체국','새마을금고','신협','수협','부산','iM뱅크(대구)','경남','광주','전북','제주','한국씨티','KDB산업','저축은행'];
-  const STEPS = ['기본 정보', '청구 내용', '서류 올리기', '확인 및 동의'];
+  const TITLES = { info: '기본 정보', claim: '청구 내용', docs: '서류 올리기', sign: '청구서 서명', confirm: '확인 및 동의' };
   const TRACK = ['접수', '서류 확인', '보험사 청구', '지급 완료'];
   const MAX_FILES = 20;
   const DEMO = !CONFIG.ENDPOINT;
 
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const state = { step: 1, files: [], busy: false, done: false, last: null };
+  const state = { key: 'info', files: [], busy: false, done: false, last: null };
+  const sig = { phase: 1, F: null, consents: null, pad: null, esign: null, pdf: null, hash: '', skipped: false, why: '', building: false };
 
   /* ── 초기화 ────────────────────────────────────────── */
   $('#demo').hidden = !DEMO;
@@ -569,14 +745,16 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
 
   /* ── 유틸 ──────────────────────────────────────────── */
   function todayISO(){ const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
-  function val(id){ return ($('#' + id).value || '').trim(); }
+  function val(id){ const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
   function digits(s){ return String(s || '').replace(/\D/g, ''); }
   function fmtPhone(d){ d = d.slice(0, 11); if (d.length < 4) return d; if (d.length < 8) return d.slice(0, 3) + '-' + d.slice(3); return d.slice(0, 3) + '-' + d.slice(3, d.length - 4) + '-' + d.slice(-4); }
+  function radioVal(name){ const r = $(`input[name="${name}"]:checked`); return r ? r.value : ''; }
   function isFamily(){ return $('#f-ins-family').checked; }
   function newAcct(){ return $('#f-acct-new').checked; }
   function types(){ return $$('input[name="types"]:checked').map(i => i.value); }
   function uid(){ return Math.random().toString(36).slice(2, 9); }
   function prettyDate(iso){ if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${y}.${m}.${d}`; }
+  function insuredName(){ return isFamily() ? val('f-iname') : val('f-name'); }
 
   let toastT;
   function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
@@ -588,66 +766,115 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
   function err(id, msg, list){
     const el = document.getElementById(id); if (el && el.matches('input,select,textarea')) el.setAttribute('aria-invalid', 'true');
     const e = $(`.err[data-for="${id}"]`); if (e) { e.textContent = msg; e.hidden = false; }
-    list.push(el);
+    list.push(el || e);
   }
   function focusFirst(list){ const el = list.find(Boolean); if (!el) return; if (el.focus) el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+
+  /* ── 생년월일 · 미성년 · 서명할 사람 ──────────────── */
+  function birthInfo(){
+    const b = digits(val('f-birth'));
+    if (!/^\d{6}$/.test(b)) return null;
+    const yy = +b.slice(0, 2), mm = +b.slice(2, 4), dd = +b.slice(4, 6), now = new Date();
+    const y = (2000 + yy <= now.getFullYear()) ? 2000 + yy : 1900 + yy;
+    const dt = new Date(y, mm - 1, dd);
+    if (dt.getMonth() !== mm - 1 || dt.getDate() !== dd || dt > now) return null;
+    const before = now.getMonth() < mm - 1 || (now.getMonth() === mm - 1 && now.getDate() < dd);
+    return { b6: b, y, age: now.getFullYear() - y - (before ? 1 : 0) };
+  }
+  function isMinor(){ const b = birthInfo(); return !!b && b.age < 19; }
+  function guardianFromApplicant(){ return isMinor() && isFamily() && val('f-rel') === '자녀'; }
+  function guardianName(){
+    if (!isMinor()) return '';
+    return guardianFromApplicant() ? val('f-name') : val('f-guard');
+  }
+  function signer(){
+    const g = guardianName();
+    return g ? { role: '법정대리인', name: g } : { role: '피보험자', name: insuredName() };
+  }
+  function needSign(){ return radioVal('insurer') === SIGN_INS && radioVal('atype') !== '교통사고'; }
+  function steps(){ return ['info', 'claim', 'docs'].concat(needSign() && !sig.skipped ? ['sign'] : []).concat(['confirm']); }
 
   /* ── 화면 전환 ─────────────────────────────────────── */
   function show(view){ $$('.view').forEach(v => v.hidden = v.id !== 'v-' + view); window.scrollTo(0, 0); }
   function go(h){ if (location.hash.replace('#', '') === h) route(); else location.hash = h; }
   function route(){
     const h = location.hash.replace('#', '');
-    if (h === 'claim') { if (state.done) resetForm(); show('form'); goStep(state.step); }
+    if (h === 'claim') { if (state.done) resetForm(); show('form'); goStep(steps().includes(state.key) ? state.key : 'info'); }
     else if (h === 'status') show('status');
     else show('home');
   }
   window.addEventListener('hashchange', route);
 
-  function goStep(n){
-    state.step = n;
-    $$('.step').forEach(s => s.style.display = (+s.dataset.step === n) ? 'contents' : 'none');
-    $('#tb-title').textContent = STEPS[n - 1];
-    $('#tb-count').textContent = n + ' / 4';
-    $('#bar').style.width = (n * 25) + '%';
-    $('#next').textContent = n < 4 ? '다음' : '접수하기';
-    if (n === 3) renderNeed();
-    if (n === 4) renderSummary();
+  function paintBar(){
+    const list = steps(), i = list.indexOf(state.key);
+    let frac = (i + 1) / list.length;
+    if (state.key === 'sign') frac = (i + Math.min(sig.phase, 5) / 5) / list.length;
+    $('#bar').style.width = (frac * 100) + '%';
+    $('#tb-count').textContent = (i + 1) + ' / ' + list.length;
+  }
+  function goStep(key){
+    state.key = key;
+    $$('.step').forEach(s => s.style.display = (s.dataset.step === key) ? 'contents' : 'none');
+    $('#tb-title').textContent = TITLES[key];
+    const last = key === 'confirm';
+    $('#next').textContent = last ? '접수하기' : '다음'; $('#next').disabled = false;
+    if (key === 'docs') { renderNeed(); if (needSign()) loadAssets().catch(() => {}); }
+    if (key === 'sign') enterSign();
+    if (key === 'confirm') renderSummary();
+    paintBar();
     window.scrollTo(0, 0);
   }
+  function nextKey(){ const l = steps(); return l[l.indexOf(state.key) + 1]; }
+  function prevKey(){ const l = steps(); return l[l.indexOf(state.key) - 1]; }
 
   /* ── 입력 반응 ─────────────────────────────────────── */
   $('#f-phone').addEventListener('input', e => { e.target.value = fmtPhone(digits(e.target.value)); });
+  $('#f-birth').addEventListener('input', e => { e.target.value = digits(e.target.value).slice(0, 6); });
   $('#f-accno').addEventListener('input', e => { e.target.value = e.target.value.replace(/[^\d-]/g, ''); });
   $('#s-last4').addEventListener('input', e => { e.target.value = digits(e.target.value).slice(0, 4); });
-  $$('input[name="insured"]').forEach(r => r.addEventListener('change', () => { $('#family').hidden = !isFamily(); }));
+  function syncInsured(){ $('#family').hidden = !isFamily(); $('#birth-lb').textContent = isFamily() ? '치료받은 분 생년월일 6자리' : '생년월일 6자리'; }
+  $$('input[name="insured"]').forEach(r => r.addEventListener('change', syncInsured));
   $$('input[name="acct"]').forEach(r => r.addEventListener('change', () => { $('#acct-box').hidden = !newAcct(); }));
+  $$('input[name="contractor"]').forEach(r => r.addEventListener('change', () => { $('#cname-wrap').hidden = radioVal('contractor') !== 'other'; }));
+  $$('input[name="atype"], input[name="insurer"]').forEach(r => r.addEventListener('change', () => {
+    const n = $('#sign-note');
+    if (radioVal('insurer') === SIGN_INS && radioVal('atype') === '교통사고') { n.textContent = '교통사고는 확인할 내용이 많아서, 청구서는 설계사가 연락드려 함께 작성해요.'; n.hidden = false; }
+    else if (radioVal('insurer') === SIGN_INS) { n.textContent = '사진을 올린 다음, 삼성화재 청구서를 확인하고 서명까지 이 화면에서 하실 수 있어요.'; n.hidden = false; }
+    else if (radioVal('insurer')) { n.textContent = '청구서는 보험회사를 확인한 뒤 설계사가 따로 연락드려요.'; n.hidden = false; }
+    else n.hidden = true;
+  }));
 
   /* ── 단계별 확인 ───────────────────────────────────── */
-  function check(n){
-    const sec = $(`.step[data-step="${n}"]`); clearErrs(sec); const bad = [];
-    if (n === 1) {
+  function check(key){
+    const sec = $(`.step[data-step="${key}"]`); const bad = [];
+    if (key === 'sign') return checkSign();
+    clearErrs(sec);
+    if (key === 'info') {
       if (val('f-name').length < 2) err('f-name', '이름을 적어주세요', bad);
       if (!/^01\d{8,9}$/.test(digits(val('f-phone')))) err('f-phone', '휴대폰 번호를 다시 확인해주세요', bad);
       if (isFamily()) {
         if (val('f-iname').length < 2) err('f-iname', '이름을 적어주세요', bad);
         if (!val('f-rel')) err('f-rel', '관계를 골라주세요', bad);
       }
+      if (!birthInfo()) err('f-birth', '생년월일 6자리를 확인해주세요 (예: 811014)', bad);
     }
-    if (n === 2) {
+    if (key === 'claim') {
       if (!types().length) err('types', '치료 종류를 하나 이상 골라주세요', bad);
+      if (!radioVal('atype')) err('atype', '하나를 골라주세요', bad);
       const d = val('f-date');
       if (!d) err('f-date', '진료일을 골라주세요', bad);
       else if (d > todayISO()) err('f-date', '오늘 이후 날짜는 고를 수 없어요', bad);
+      if (!radioVal('insurer')) err('insurer', '하나를 골라주세요', bad);
       if (newAcct()) {
         if (!val('f-bank')) err('f-bank', '은행을 골라주세요', bad);
         if (digits(val('f-accno')).length < 8) err('f-accno', '계좌번호를 다시 확인해주세요', bad);
         if (val('f-holder').length < 2) err('f-holder', '예금주를 적어주세요', bad);
       }
     }
-    if (n === 3) {
+    if (key === 'docs') {
       if (!state.files.length) { err('files', '서류 사진을 한 장 이상 올려주세요', bad); bad.push($('.pickers')); }
     }
-    if (n === 4) {
+    if (key === 'confirm') {
       if (!$$('.c').every(c => c.checked)) err('consent', '필수 항목에 모두 동의해주세요', bad);
     }
     focusFirst(bad);
@@ -672,9 +899,9 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
 
   /* ── 사진 처리 ─────────────────────────────────────── */
   function readURL(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
-  function loadImg(file){ return new Promise((res, rej) => { const u = URL.createObjectURL(file); const im = new Image(); im.onload = () => res({ im, u }); im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('img')); }; im.src = u; }); }
+  function loadImgFile(file){ return new Promise((res, rej) => { const u = URL.createObjectURL(file); const im = new Image(); im.onload = () => res({ im, u }); im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('img')); }; im.src = u; }); }
   async function compress(file){
-    const { im, u } = await loadImg(file);
+    const { im, u } = await loadImgFile(file);
     const max = 2000, w = im.naturalWidth, h = im.naturalHeight, s = Math.min(1, max / Math.max(w, h));
     const c = document.createElement('canvas'); c.width = Math.round(w * s); c.height = Math.round(h * s);
     const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
@@ -713,16 +940,338 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
   }
   ['f-cam', 'f-pick'].forEach(id => $('#' + id).addEventListener('change', async e => { await addFiles(e.target.files); e.target.value = ''; }));
 
+  /* ══ 청구서 서명 (청구서앱의 삼성화재 공식 양식 사용) ══ */
+  function loadScript(src){ return new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('load ' + src)); document.head.appendChild(s); }); }
+  function loadImgSrc(src){ return new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = src; }); }
+  function b64Bytes(b){ const s = atob(b); const a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+  let assetsP = null;
+  function loadAssets(){
+    if (!assetsP) {
+      const formP = (window.CLAIM_FORMS && window.CLAIM_FORMS[SIGN_INS]) ? Promise.resolve() : loadScript(CONFIG.FORM_URL);
+      const libP = window.PDFLib ? Promise.resolve() : loadScript(CONFIG.PDFLIB_URL).catch(() => loadScript(CONFIG.PDFLIB_CDN));
+      assetsP = Promise.all([formP, libP]).then(async () => {
+        const F = window.CLAIM_FORMS && window.CLAIM_FORMS[SIGN_INS];
+        if (!F || !window.PDFLib) throw new Error('assets');
+        if (!F.bytes) F.bytes = b64Bytes(F.pdf);
+        if (!F.imgEl) F.imgEl = await loadImgSrc(F.bg);
+        return F;
+      }).catch(e => { assetsP = null; throw e; });
+    }
+    return assetsP;
+  }
+  async function fontsFor(text){
+    try { await Promise.race([document.fonts.load('400 40px "Noto Sans KR"', text || '가나다'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+  }
+  function opsText(ops){ return (ops || []).filter(o => o.v).map(o => o.v).join(''); }
+
+  // 청구서에 넣을 값 (청구서앱 collect()와 같은 모양)
+  function formData(){
+    const b = birthInfo(), ins = insuredName(), con = radioVal('contractor');
+    const holder = con === 'same' ? { name: ins, rrn: b ? b.b6 : '', tel: '' } : con === 'other' ? { name: val('f-cname'), rrn: '', tel: '' } : { name: '', rrn: '', tel: '' };
+    const atype = radioVal('atype') === '상해' ? '상해' : '질병';
+    const tel = (!isFamily() || guardianFromApplicant()) ? fmtPhone(digits(val('f-phone'))) : '';
+    return {
+      insured: { name: ins, rrn: b ? b.b6 : '', tel, job: val('f-job'), addr: '', email: '' },
+      holder, same: con === 'same', medicaid: radioVal('medicaid'), guardian: guardianName(), beneficiary: '',
+      recv: '피보험자', recvName: ins, recvTel: tel, notice: ['문자메시지'], noticeDetail: '',
+      atype, rtype: radioVal('rtype'), date: val('f-date'), place: atype === '상해' ? val('f-place') : '',
+      hospital: val('f-hosp'), dept: '', dx: val('f-dx'), story: val('f-story'),
+      car: { no: '', seat: '', autoIns: '', insurer: '', contact: '' }, cov: [], exclude: '',
+      bank: newAcct() ? val('f-bank') : '', acct: newAcct() ? val('f-accno') : '', acctHolder: newAcct() ? val('f-holder') : '',
+      writeDate: todayISO()
+    };
+  }
+  const formHash = () => JSON.stringify(formData());
+
+  // 청구서앱 drawOps 그대로 (칸이 좁으면 글자를 줄이고, 그래도 넘치면 잘린 칸으로 보고)
+  function drawOps(cx, ops, k){
+    const cut = [];
+    cx.save(); cx.fillStyle = '#000'; cx.strokeStyle = '#000'; cx.textBaseline = 'alphabetic';
+    const setF = s => { cx.font = `400 ${s * k}px ${FONT}`; };
+    const wid = (t, s) => { setF(s); return cx.measureText(t).width / k; };
+    for (const o of ops) {
+      if (o.t === 'check') {
+        const z = o.sz || 1; cx.lineWidth = 1.15 * k * (z > 1 ? z * 0.75 : 1); cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.beginPath();
+        cx.moveTo((o.cx - 2.4 * z) * k, (o.cy - 0.4 * z) * k); cx.lineTo((o.cx - 0.7 * z) * k, (o.cy + 2.1 * z) * k); cx.lineTo((o.cx + 3.0 * z) * k, (o.cy - 3.1 * z) * k); cx.stroke(); continue;
+      }
+      if (o.t === 'img') {
+        if (!o.img) continue;
+        const [x0, y0, x1, y1] = o.box, bw = x1 - x0, bh = y1 - y0, iw = o.img.width, ih = o.img.height, sc = Math.min(bw / iw, bh / ih), w = iw * sc, h = ih * sc;
+        cx.drawImage(o.img, (x0 + (bw - w) / 2) * k, (y0 + (bh - h) / 2) * k, w * k, h * k); continue;
+      }
+      let x, w, align = o.align || 'left', y0, y1;
+      if (o.box) { [x, y0, , y1] = o.box; w = o.box[2] - o.box[0]; if (align === 'right') x = o.box[2]; if (align === 'center') x = (o.box[0] + o.box[2]) / 2; }
+      else { x = o.x; w = o.w || 220; }
+      let s = o.s, lines = [o.v];
+      const minOne = o.wrap ? 7 : 5.6;
+      while (s > minOne && wid(o.v, s) > w) s -= 0.25;
+      if (wid(o.v, s) > w && o.wrap && o.box) {
+        for (s = Math.min(o.s, 7.2); s >= 5.2; s -= 0.2) {
+          const ch = [...o.v]; let a = '', i = 0;
+          while (i < ch.length && wid(a + ch[i], s) <= w) { a += ch[i]; i++; }
+          const sp = a.lastIndexOf(' '); if (i < ch.length && sp > a.length * 0.6) { a = a.slice(0, sp); i = sp + 1; }
+          const b = ch.slice(i).join('').trim(); lines = [a, b]; if (wid(b, s) <= w) break;
+        }
+      }
+      lines = lines.map(t => { if (wid(t, s) <= w) return t; if (!cut.includes(o.k || o.v)) cut.push(o.k || o.v); const c = [...t]; while (c.length && wid(c.join('') + '…', s) > w) c.pop(); return c.join('') + '…'; });
+      setF(s); cx.textAlign = align;
+      if (o.box) { const mid = (y0 + y1) / 2, gap = s * 1.18; lines.forEach((t, i) => { const base = mid + s * 0.36 + (lines.length > 1 ? (i ? gap / 2 : -gap / 2) : 0); cx.fillText(t, x * k, base * k); }); }
+      else cx.fillText(lines[0], x * k, o.base * k);
+    }
+    cx.restore();
+    return cut;
+  }
+
+  async function drawPreview(cv, withSign){
+    const F = await loadAssets(); sig.F = F;
+    const ops = F.fill(formData(), { sign: withSign ? sig.esign : null })[0] || [];
+    await fontsFor(opsText(ops));
+    const w = cv.parentElement.clientWidth || 360, dpr = Math.max(1, window.devicePixelRatio || 1);
+    cv.width = Math.min(1800, Math.round(w * dpr * 1.6));
+    cv.height = Math.round(cv.width * F.size[1] / F.size[0]);
+    const cx = cv.getContext('2d'), k = cv.width / F.size[0];
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+    cx.drawImage(F.imgEl, 0, 0, cv.width, cv.height);
+    return drawOps(cx, ops, k);
+  }
+
+  // 서명 패드 (청구서앱과 같은 방식)
+  class Pad {
+    constructor(cv){
+      this.cv = cv; this.ctx = cv.getContext('2d'); this.pts = 0; this.down = false; this.w = 0;
+      cv.addEventListener('pointerdown', e => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) {} this.down = true; this.last = this.pos(e); this.dot(this.last); const er = $('.err[data-for="pad"]'); er.hidden = true; });
+      cv.addEventListener('pointermove', e => {
+        if (!this.down) return; e.preventDefault();
+        const p = this.pos(e), c = this.ctx, m = { x: (this.last.x + p.x) / 2, y: (this.last.y + p.y) / 2 };
+        c.beginPath(); c.moveTo(this.mid ? this.mid.x : this.last.x, this.mid ? this.mid.y : this.last.y); c.quadraticCurveTo(this.last.x, this.last.y, m.x, m.y); c.stroke();
+        this.mid = m; this.last = p; this.pts++;
+      });
+      const up = () => { this.down = false; this.mid = null; };
+      cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    }
+    fit(){
+      const r = this.cv.getBoundingClientRect(), dpr = Math.max(1, window.devicePixelRatio || 1);
+      this.cv.width = Math.round(r.width * dpr); this.cv.height = Math.round(r.height * dpr);
+      const c = this.ctx; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.lineWidth = 2.8; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = '#111'; c.fillStyle = '#111';
+      this.pts = 0; this.w = r.width;
+    }
+    pos(e){ const r = this.cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    dot(p){ const c = this.ctx; c.beginPath(); c.arc(p.x, p.y, 1.4, 0, Math.PI * 2); c.fill(); }
+    clear(){ const c = this.ctx; c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, this.cv.width, this.cv.height); c.restore(); this.pts = 0; }
+    empty(){ return this.pts < 12; }
+    trimmed(){
+      const w = this.cv.width, h = this.cv.height, d = this.ctx.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) return null; const p = 8; x0 = Math.max(0, x0 - p); y0 = Math.max(0, y0 - p); x1 = Math.min(w - 1, x1 + p); y1 = Math.min(h - 1, y1 + p);
+      const out = document.createElement('canvas'); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+      out.getContext('2d').drawImage(this.cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height); return out;
+    }
+  }
+  sig.pad = new Pad($('#pad'));
+  $('#pad-clear').addEventListener('click', () => sig.pad.clear());
+  window.addEventListener('resize', () => {
+    if (state.key !== 'sign' || sig.phase !== 4) return;
+    if (Math.abs($('#pad').getBoundingClientRect().width - sig.pad.w) > 2) { sig.pad.fit(); sig.pad.clear(); toast('화면 크기가 바뀌어 서명 칸을 비웠어요. 다시 서명해 주세요'); }
+  });
+
+  function blankConsents(F){
+    const c = {}; F.consentUI.forEach(g => { c[g.key] = {}; g.items.forEach(i => c[g.key][i.k] = null); });
+    c.optional = {}; if (F.optionalUI) F.optionalUI.items.forEach(i => c.optional[i.k] = null);
+    return c;
+  }
+  function invalidateSign(){ sig.esign = null; sig.pdf = null; sig.hash = ''; }
+
+  function signFail(msg){
+    sig.why = msg;
+    $('#sign-fail-msg').textContent = msg;
+    $('#sign-fail').hidden = false;
+  }
+  $('#sign-skip').addEventListener('click', () => {
+    sig.skipped = true; invalidateSign(); $('#sign-fail').hidden = true;
+    goStep('confirm');
+  });
+
+  function showPhase(n){
+    sig.phase = n;
+    $$('.sp').forEach(p => p.hidden = +p.dataset.sp !== n);
+    $('#sign-fail').hidden = true;
+    clearErrs($('.step[data-step="sign"]'));
+    $('#next').textContent = n === 1 ? '청구서 보기' : n === 2 ? '내용이 맞아요' : n === 3 ? '다음' : n === 4 ? '서명 완료' : '다음';
+    $('#next').disabled = false;
+    if (n === 1) {
+      $('#place-wrap').hidden = radioVal('atype') !== '상해';
+      $('#guard-wrap').hidden = !(isMinor() && !guardianFromApplicant());
+      $('#cname-wrap').hidden = radioVal('contractor') !== 'other';
+    }
+    if (n === 2) {
+      $('#pv-load').hidden = false; $('#pv-load').textContent = '청구서를 불러오는 중이에요…';
+      $('#next').disabled = true;
+      drawPreview($('#pv'), false).then(() => { $('#pv-load').hidden = true; $('#next').disabled = false; })
+        .catch(() => { $('#pv-load').textContent = '청구서를 불러오지 못했어요.'; $('#next').disabled = false; $('#next').textContent = '다시 불러오기'; signFail('청구서를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 불러오거나, 서명 없이 접수하시면 설계사가 따로 연락드려요.'); });
+    }
+    if (n === 3) renderConsents();
+    if (n === 4) {
+      const s = signer();
+      $('#sign-who').textContent = `${s.role} ${s.name}` + (s.role === '법정대리인' ? ` (치료받은 분 ${insuredName()})` : '');
+      $('#sign-lead').textContent = `청구 내용과 동의 사항을 확인했고, ${SIGN_INS} 보험금 청구서에 이 서명을 사용하는 데 동의합니다.`;
+      const ho = $('#sign-handover');
+      if (s.name !== val('f-name')) { ho.textContent = `${s.name} 님이 직접 서명해 주셔야 해요. 폰을 건네주세요.`; ho.hidden = false; }
+      else ho.hidden = true;
+      requestAnimationFrame(() => { sig.pad.fit(); sig.pad.clear(); });
+    }
+    if (n === 5) {
+      drawPreview($('#pv2'), true).catch(() => {});
+      const kb = sig.pdf ? (sig.pdf.bytes.length / 1024 / 1024).toFixed(1) : '0';
+      $('#signed-info').textContent = `청구서와 동의서 ${sig.pdf ? sig.pdf.pages : 0}쪽에 서명이 들어갔어요 (${kb}MB). 접수할 때 사진과 함께 보내드려요.`;
+      $('#open-pdf').hidden = !DEMO;
+    }
+    paintBar();
+    window.scrollTo(0, 0);
+  }
+
+  function enterSign(){
+    if (sig.esign && sig.hash && sig.hash !== formHash()) { invalidateSign(); toast('내용이 바뀌어서 다시 서명이 필요해요'); }
+    if (sig.esign && sig.pdf) showPhase(5); else showPhase(1);
+    loadAssets().catch(() => {});
+  }
+
+  function renderConsents(){
+    const F = sig.F; if (!F) return;
+    if (!sig.consents) sig.consents = blankConsents(F);
+    $('#req-notice').textContent = F.requiredNotice;
+    const box = $('#cgroups'); box.textContent = '';
+    const groups = F.consentUI.map(g => ({ g, opt: false })).concat(F.optionalUI ? [{ g: F.optionalUI, opt: true }] : []);
+    groups.forEach(({ g, opt }) => {
+      const wrap = document.createElement('div'); wrap.className = 'cg';
+      const h = document.createElement('h3'); h.textContent = g.title; wrap.appendChild(h);
+      if (g.desc) { const p = document.createElement('p'); p.className = 'gdesc'; p.textContent = g.desc; wrap.appendChild(p); }
+      g.items.forEach(it => {
+        const row = document.createElement('div'); row.className = 'ci';
+        const lab = document.createElement('div'); lab.className = 'ci-lab'; lab.textContent = it.label;
+        if (it.desc) { const sm = document.createElement('small'); sm.textContent = it.desc; lab.appendChild(sm); }
+        const tog = document.createElement('div'); tog.className = 'tog'; tog.setAttribute('role', 'group'); tog.setAttribute('aria-label', it.label);
+        [['동의함', true], ['동의 안 함', false]].forEach(([t, v]) => {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.className = v ? 'y' : 'n';
+          b.setAttribute('aria-pressed', String(sig.consents[g.key][it.k] === v));
+          b.addEventListener('click', () => {
+            sig.consents[g.key][it.k] = v;
+            $$('button', tog).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+            $('.err[data-for="cgroups"]').hidden = true;
+          });
+          tog.appendChild(b);
+        });
+        row.append(lab, tog); wrap.appendChild(row);
+      });
+      if (opt) { const p = document.createElement('p'); p.className = 'note-s'; p.textContent = '[선택] 항목은 고르지 않고 넘어가셔도 돼요. 동의하지 않아도 보험금 지급에는 영향이 없어요.'; wrap.appendChild(p); }
+      box.appendChild(wrap);
+    });
+  }
+  $('#agree-req').addEventListener('click', () => {
+    const F = sig.F; if (!F) return;
+    F.consentUI.forEach(g => g.items.forEach(i => sig.consents[g.key][i.k] = true));
+    renderConsents(); $('.err[data-for="cgroups"]').hidden = true;
+    toast('[필수] 항목에 모두 동의했어요');
+  });
+  $('#docs-toggle').addEventListener('click', () => {
+    const box = $('#docs'), b = $('#docs-toggle'), F = sig.F; if (!F) return;
+    if (!box.childElementCount) F.docs.forEach((s, i) => { const im = new Image(); im.src = s; im.alt = `동의서 ${i + 2}쪽`; im.loading = 'lazy'; box.appendChild(im); });
+    box.hidden = !box.hidden; b.setAttribute('aria-expanded', String(!box.hidden));
+    b.textContent = box.hidden ? '동의서 전문 보기 (2~6쪽)' : '동의서 전문 닫기';
+  });
+  $('#resign').addEventListener('click', () => { invalidateSign(); showPhase(4); });
+  $('#open-pdf').addEventListener('click', () => {
+    if (!sig.pdf) return;
+    const u = URL.createObjectURL(new Blob([sig.pdf.bytes], { type: 'application/pdf' }));
+    window.open(u, '_blank'); setTimeout(() => URL.revokeObjectURL(u), 60000);
+  });
+
+  function checkSign(){
+    const sec = $('.step[data-step="sign"]'); clearErrs(sec); const bad = [];
+    if (sig.phase === 1) {
+      if (!radioVal('medicaid')) err('medicaid', '하나를 골라주세요', bad);
+      if (!radioVal('rtype')) err('rtype', '하나를 골라주세요', bad);
+      if (val('f-story').length < 2) err('f-story', '짧게라도 적어주세요', bad);
+      if (!radioVal('contractor')) err('contractor', '하나를 골라주세요', bad);
+      if (radioVal('contractor') === 'other' && val('f-cname').length < 2) err('f-cname', '계약자 성함을 적어주세요', bad);
+      if (isMinor() && !guardianFromApplicant() && val('f-guard').length < 2) err('f-guard', '법정대리인 성함을 적어주세요', bad);
+    }
+    if (sig.phase === 3) {
+      const open = sig.F.consentUI.flatMap(g => g.items.filter(i => sig.consents[g.key][i.k] === null));
+      if (open.length) err('cgroups', `[필수] 항목 ${open.length}개를 아직 고르지 않으셨어요 (동의함 또는 동의 안 함).`, bad);
+    }
+    if (sig.phase === 4 && sig.pad.empty()) err('pad', '서명 칸에 서명해 주세요', bad);
+    focusFirst(bad);
+    return !bad.length;
+  }
+
+  async function buildSignedPdf(){
+    const F = await loadAssets(), ops = F.fill(formData(), { sign: sig.esign });
+    const doc = await PDFLib.PDFDocument.create(), src = await PDFLib.PDFDocument.load(F.bytes);
+    const idx = F.faxPages, pages = await doc.copyPages(src, idx), cut = [];
+    await fontsFor(idx.map(i => opsText(ops[i])).join(''));
+    const K = 200 / 72;
+    for (let i = 0; i < pages.length; i++) {
+      const pg = doc.addPage(pages[i]), o = ops[idx[i]];
+      if (!o || !o.length) continue;
+      const cv = document.createElement('canvas'); cv.width = Math.round(F.size[0] * K); cv.height = Math.round(F.size[1] * K);
+      drawOps(cv.getContext('2d'), o, K).forEach(c => cut.includes(c) || cut.push(c));
+      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+      const png = new Uint8Array(await blob.arrayBuffer());
+      pg.drawImage(await doc.embedPng(png), { x: 0, y: 0, width: pg.getWidth(), height: pg.getHeight() });
+      cv.width = cv.height = 0;
+    }
+    doc.setTitle(`${SIGN_INS} 보험금 청구서 서명본`);
+    return { bytes: await doc.save(), pages: doc.getPageCount(), cut };
+  }
+  function bytesB64(bytes){ return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = () => no(r.error); r.readAsDataURL(new Blob([bytes], { type: 'application/pdf' })); }); }
+
+  async function signNext(){
+    if (sig.phase === 2 && !sig.F) return showPhase(2);   // 불러오기 실패 후 '다시 불러오기'
+    if (!checkSign()) return;
+    if (sig.phase === 1) { try { sig.F = sig.F || await loadAssets(); } catch (e) {} return showPhase(2); }
+    if (sig.phase === 2) { if (!sig.F) return; if (!sig.consents) sig.consents = blankConsents(sig.F); return showPhase(3); }
+    if (sig.phase === 3) {
+      const refused = sig.F.consentUI.some(g => g.items.some(i => sig.consents[g.key][i.k] === false));
+      if (refused) toast('[필수] 항목을 동의하지 않으면 보험회사가 처리하지 못할 수 있어요. 설계사가 확인 후 연락드려요');
+      return showPhase(4);
+    }
+    if (sig.phase === 4) {
+      const s = signer(), main = sig.pad.trimmed();
+      sig.esign = { consents: JSON.parse(JSON.stringify(sig.consents)), main, mainURL: main.toDataURL('image/png'), mainRole: s.role, mainName: s.name, bene: null, beneURL: null, beneName: '', at: new Date() };
+      sig.hash = formHash();
+      const btn = $('#next'); btn.disabled = true; btn.textContent = '청구서에 서명 넣는 중…'; sig.building = true;
+      try {
+        sig.pdf = await buildSignedPdf();
+        sig.pdf.b64 = await bytesB64(sig.pdf.bytes);
+        if (DEMO) window.__claimPdfB64 = sig.pdf.b64;
+        showPhase(5);
+      } catch (e) {
+        invalidateSign(); btn.disabled = false; btn.textContent = '서명 완료';
+        signFail('청구서를 만들지 못했어요. 다시 해보시거나, 서명 없이 접수하시면 설계사가 따로 연락드려요.');
+      } finally { sig.building = false; }
+      return;
+    }
+    if (sig.phase === 5) goStep('confirm');
+  }
+
   /* ── 요약 ──────────────────────────────────────────── */
+  function signLine(){
+    if (radioVal('insurer') !== SIGN_INS) return '보험회사 확인 후 설계사가 연락드려요';
+    if (radioVal('atype') === '교통사고') return '설계사가 연락드려 함께 작성해요';
+    if (sig.skipped || !sig.pdf) return '서명 없이 접수 (설계사가 연락드려요)';
+    return `${SIGN_INS} 청구서 서명 완료 (${sig.pdf.pages}쪽)`;
+  }
   function rowsFor(){
     const r = [];
     r.push(['접수하시는 분', val('f-name') + ' · ' + val('f-phone')]);
-    r.push(['치료받은 분', isFamily() ? `${val('f-iname')} (${val('f-rel')})` : '본인']);
-    r.push(['치료 종류', types().join(', ')]);
+    r.push(['치료받은 분', (isFamily() ? `${val('f-iname')} (${val('f-rel')})` : '본인') + ' · ' + val('f-birth')]);
+    r.push(['치료 종류', types().join(', ') + ' · ' + (radioVal('atype') === '상해' ? '다침(상해)' : radioVal('atype'))]);
     r.push(['진료일', prettyDate(val('f-date'))]);
     if (val('f-hosp')) r.push(['병원', val('f-hosp')]);
+    r.push(['보험회사', radioVal('insurer')]);
     r.push(['받을 계좌', newAcct() ? `${val('f-bank')} ${val('f-accno')} (${val('f-holder')})` : '가입 시 등록한 계좌']);
     r.push(['올린 서류', state.files.length + '장']);
+    r.push(['청구서', signLine()]);
     if (val('f-memo')) r.push(['남기실 말씀', val('f-memo')]);
     return r;
   }
@@ -730,17 +1279,20 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
     dl.textContent = '';
     rows.forEach(([k, v]) => { const d = document.createElement('div'); const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; d.append(dt, dd); dl.appendChild(d); });
   }
-  function renderSummary(){ fillDL($('#sum'), rowsFor()); $('#submit-err').hidden = true; }
+  function renderSummary(){
+    if (needSign() && !sig.skipped && sig.esign && sig.hash !== formHash()) { invalidateSign(); toast('내용이 바뀌어서 다시 서명이 필요해요'); return goStep('sign'); }
+    fillDL($('#sum'), rowsFor()); $('#submit-err').hidden = true;
+  }
 
   /* ── 동의 ──────────────────────────────────────────── */
   const all = $('#c-all');
   all.addEventListener('change', () => { $$('.c').forEach(c => c.checked = all.checked); if (all.checked) $('.err[data-for="consent"]').hidden = true; });
   $$('.c').forEach(c => c.addEventListener('change', () => { all.checked = $$('.c').every(z => z.checked); }));
-  $$('.more').forEach(b => b.addEventListener('click', () => { const t = document.getElementById(b.dataset.more); t.hidden = !t.hidden; b.setAttribute('aria-expanded', String(!t.hidden)); b.textContent = t.hidden ? '보기' : '접기'; }));
+  $$('.more[data-more]').forEach(b => b.addEventListener('click', () => { const t = document.getElementById(b.dataset.more); t.hidden = !t.hidden; b.setAttribute('aria-expanded', String(!t.hidden)); b.textContent = t.hidden ? '보기' : '접기'; }));
 
   /* ── 전송 ──────────────────────────────────────────── */
   async function post(payload){
-    const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 120000);
+    const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 180000);
     try {
       const r = await fetch(CONFIG.ENDPOINT, { method: 'POST', body: JSON.stringify(payload), signal: ac.signal, redirect: 'follow' });
       return await r.json();
@@ -754,7 +1306,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
     files: '서류 수를 확인해주세요. 한 번에 20장까지 보낼 수 있어요.',
     invalid: '입력한 내용을 다시 확인해주세요.',
     consent: '필수 항목에 모두 동의해주세요.',
-    network: '전송이 끝나지 않았어요. 인터넷 연결을 확인하고 다시 눌러주세요. 올린 사진은 그대로 있어요.'
+    network: '전송이 끝나지 않았어요. 인터넷 연결을 확인하고 다시 눌러주세요. 올린 사진과 서명은 그대로 있어요.'
   };
   function setSending(on){
     state.busy = on;
@@ -762,23 +1314,43 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
     $('#next').textContent = on ? '보내는 중이에요…' : '접수하기';
     $('#bar-ind').hidden = !on;
     $('#sending').hidden = !on;
-    $('#sending').textContent = on ? `서류 ${state.files.length}장을 보내고 있어요. 화면을 닫지 말아주세요.` : '';
+    $('#sending').textContent = on ? `서류 ${state.files.length}장${sig.pdf && !sig.skipped ? '과 청구서' : ''}를 보내고 있어요. 화면을 닫지 말아주세요.` : '';
     $('#back').disabled = on;
+  }
+  function consentText(){
+    const F = sig.F; if (!F || !sig.esign) return null;
+    const out = {};
+    F.consentUI.concat(F.optionalUI ? [F.optionalUI] : []).forEach(g => {
+      out[g.title] = g.items.map(i => `${i.label}: ${sig.esign.consents[g.key][i.k] === true ? '동의' : sig.esign.consents[g.key][i.k] === false ? '동의 안 함' : '선택 안 함'}`);
+    });
+    return out;
   }
   async function submit(){
     if (state.busy) return;
     $('#submit-err').hidden = true;
+    const b = birthInfo(), signed = needSign() && !sig.skipped && sig.pdf && sig.esign;
     const payload = {
       action: 'submit',
       website: $('#f-web').value,
       applicant: {
-        name: val('f-name'), phone: digits(val('f-phone')),
+        name: val('f-name'), phone: digits(val('f-phone')), birth: b ? b.b6 : '',
         insuredSelf: !isFamily(), insuredName: isFamily() ? val('f-iname') : '', relation: isFamily() ? val('f-rel') : ''
       },
       claim: {
-        types: types(), date: val('f-date'), hospital: val('f-hosp'), memo: val('f-memo'),
-        account: newAcct() ? { changed: true, bank: val('f-bank'), number: val('f-accno'), holder: val('f-holder') } : { changed: false }
+        types: types(), atype: radioVal('atype'), insurer: radioVal('insurer'),
+        date: val('f-date'), hospital: val('f-hosp'), memo: val('f-memo'),
+        account: newAcct() ? { changed: true, bank: val('f-bank'), number: val('f-accno'), holder: val('f-holder') } : { changed: false },
+        form: needSign() ? {
+          medicaid: radioVal('medicaid'), rtype: radioVal('rtype'), story: val('f-story'), place: val('f-place'), dx: val('f-dx'),
+          contractor: radioVal('contractor'), contractorName: radioVal('contractor') === 'other' ? val('f-cname') : '',
+          guardian: guardianName(), job: val('f-job')
+        } : null
       },
+      claimForm: signed ? {
+        insurer: SIGN_INS, mime: 'application/pdf', data: sig.pdf.b64, pages: sig.pdf.pages, cut: sig.pdf.cut,
+        signerRole: sig.esign.mainRole, signerName: sig.esign.mainName, signedAt: sig.esign.at.toISOString(), consents: consentText()
+      } : null,
+      signNote: needSign() && !signed ? (sig.why || '고객이 서명 없이 접수') : '',
       consent: { privacy: true, sensitive: true, thirdParty: true, at: new Date().toISOString() },
       files: state.files.map(f => ({ mime: f.mime, data: f.data }))
     };
@@ -802,9 +1374,10 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
       ['접수일시', at],
       ['치료받은 분', isFamily() ? `${val('f-iname')} (${val('f-rel')})` : val('f-name') + ' (본인)'],
       ['치료 종류', types().join(', ')],
-      ['올린 서류', state.files.length + '장']
+      ['올린 서류', state.files.length + '장'],
+      ['청구서', signLine()]
     ]);
-    state.last = { id, last4: digits(val('f-phone')).slice(-4), insured: isFamily() ? val('f-iname') : val('f-name'), types: types().join(', '), at };
+    state.last = { id, last4: digits(val('f-phone')).slice(-4), insured: insuredName(), types: types().join(', '), at };
     state.done = true;
     show('done');
   }
@@ -812,10 +1385,13 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
   function resetForm(){
     $('#claim-form').reset();
     state.files = []; renderThumbs();
-    $('#family').hidden = true; $('#acct-box').hidden = true;
-    $$('.terms').forEach(t => t.hidden = true); $$('.more').forEach(b => { b.textContent = '보기'; b.setAttribute('aria-expanded', 'false'); });
+    $('#family').hidden = true; $('#acct-box').hidden = true; $('#sign-note').hidden = true;
+    $$('.terms').forEach(t => t.hidden = true); $$('.more[data-more]').forEach(b => { b.textContent = '보기'; b.setAttribute('aria-expanded', 'false'); });
     clearErrs(document);
-    state.step = 1; state.done = false;
+    Object.assign(sig, { phase: 1, consents: null, esign: null, pdf: null, hash: '', skipped: false, why: '', building: false });
+    $('#docs').hidden = true; $('#docs').textContent = '';
+    syncInsured();
+    state.key = 'info'; state.done = false;
   }
 
   /* ── 접수 내역 ─────────────────────────────────────── */
@@ -864,11 +1440,18 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
   /* ── 버튼 연결 ─────────────────────────────────────── */
   $('#go-claim').addEventListener('click', () => { if (state.done) resetForm(); go('claim'); });
   $('#go-status').addEventListener('click', () => go('status'));
-  $('#back').addEventListener('click', () => { if (state.busy) return; if (state.step > 1) goStep(state.step - 1); else go(''); });
+  $('#back').addEventListener('click', () => {
+    if (state.busy || sig.building) return;
+    if (state.key === 'sign' && sig.phase > 1) { if (sig.phase === 5) invalidateSign(); return showPhase(sig.phase === 5 ? 4 : sig.phase - 1); }
+    const p = prevKey(); if (p) goStep(p); else go('');
+  });
   $('#st-back').addEventListener('click', () => go(''));
   $('#next').addEventListener('click', () => {
-    if (!check(state.step)) return;
-    if (state.step < 4) goStep(state.step + 1); else submit();
+    if ($('#next').disabled) return;
+    if (state.key === 'sign') return signNext();
+    if (!check(state.key)) return;
+    if (state.key === 'confirm') return submit();
+    goStep(nextKey());
   });
   $('#claim-form').addEventListener('submit', e => e.preventDefault());
   $('#done-home').addEventListener('click', () => go(''));
@@ -877,6 +1460,7 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
     $('#st-result').hidden = true; go('status');
   });
 
+  syncInsured();
   route();
 })();
 </script>
