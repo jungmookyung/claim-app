@@ -25,6 +25,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
 
   if (url.origin === location.origin) {
+    if (url.pathname.includes('/intake/')) return;           // 고객용 청구 접수 페이지는 이 앱과 별개라 손대지 않음
     if (url.pathname.includes('/api/')) return;              // 맥미니 서버로 열었을 때의 API는 그대로 통과
     if (req.mode === 'navigate') {                           // 앱 화면: 온라인이면 최신, 오프라인이면 저장본
       e.respondWith(
