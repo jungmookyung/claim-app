@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>보험금 청구서 자동작성</title>
+<title>보험금 청구서 자동작성 · 정무경보험대리점</title>
+<meta name="description" content="고객 정보를 한 번 입력하면 보험사별 보험금 청구서가 채워지고, 고객 서명(현장·카톡 링크)과 모바일팩스 발송까지 이어지는 설계사용 무료 도구입니다. 입력값은 서버로 보내지 않고 기기 안에서만 처리합니다.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="보험금 청구서 자동작성 · 정무경보험대리점">
+<meta property="og:description" content="한 번 입력 → 보험사별 청구서 → 고객 서명 → 모바일팩스. 배상책임 청구, 보험사 청구 팩스번호 안내, 첨부서류 반듯하게 펴기까지.">
+<meta property="og:image" content="https://jungmookyung.github.io/claim-app/icons/og.jpg">
+<meta property="og:url" content="https://jungmookyung.github.io/claim-app/">
 <meta name="theme-color" content="#1b2a4e">
 <meta name="robots" content="noindex,nofollow">
 <meta name="mobile-web-app-capable" content="yes">
@@ -230,6 +236,61 @@ table.f td{font-size:9.4pt}
   .bnav button{flex:1;font-size:14px;padding:10px 6px}
   body{padding-bottom:72px}
 }
+/* 첨부 정리 (모서리 맞추기) */
+.dfx{position:fixed;inset:0;z-index:70;background:rgba(10,16,32,.94);display:flex;align-items:flex-start;justify-content:center;overflow:auto}
+.dfx-in{width:100%;max-width:760px;padding:calc(12px + env(safe-area-inset-top,0px)) 14px calc(16px + env(safe-area-inset-bottom,0px));color:#fff}
+.dfx-head{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.dfx-head b{font-size:17px;font-weight:900}
+.dfx-head span{font-size:13px;opacity:.8}
+.dfx-stage{width:100%;display:flex;justify-content:center}
+.dfx-stage canvas{touch-action:none;border-radius:6px;max-width:100%}
+.dfx-bw{display:flex;gap:7px;align-items:center;font-size:14px;margin:12px 0}
+.dfx-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.dfx-acts button{font-size:14px;padding:10px 14px}
+.att{grid-template-columns:52px 1fr auto}
+.att .th{width:52px;height:52px}
+.att .meta{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+.att .meta b{color:var(--good)}
+/* 보험사 청구 팩스번호 안내 */
+.dir-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dir-tools input{flex:1;min-width:160px;font-size:15px!important;padding:10px 12px!important}
+.dir-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dir-tabs button{font-size:13px;padding:7px 12px;border-radius:999px}
+.dir-tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.dir-row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px}
+.dir-row .t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dir-row .t b{font-size:15.5px}
+.dir-row .n{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.dir-row .num{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.dir-row .num.none{font-size:14px;color:var(--warn)}
+.dir-row .num.unv{font-size:15px;color:var(--sub)}
+.dir-row .n button{font-size:12.5px;padding:6px 10px}
+.dir-row .x{font-size:12.5px;color:var(--sub);line-height:1.6;margin-top:6px}
+.dir-row .x a{color:var(--hl)}
+.dir-row .x .old{text-decoration:line-through}
+.dir-foot{font-size:12.5px;color:var(--sub);line-height:1.65;margin:12px 0 0}
+.faxrow .flag{grid-column:1/-1;font-size:11.5px;color:var(--warn);font-weight:700}
+.faxrow .flag button{font-size:11px;padding:3px 8px;margin-left:4px}
+/* 원격 서명 · 알림 */
+.req-msg{width:100%;height:150px;font-size:12.5px!important;color:var(--sub)!important;margin-top:8px}
+.steps-mini{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.7}
+.toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:80;max-width:calc(100% - 32px);background:#16213a;color:#fff;font-size:13.5px;font-weight:700;line-height:1.5;border-radius:12px;padding:11px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.bad{background:var(--warn)}
+/* 첫 화면 · 바닥글 */
+.hero{max-width:640px;margin:36px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 22px 18px;line-height:1.6}
+.hero h2{margin:0 0 6px;font-size:21px;font-weight:900;line-height:1.4;letter-spacing:-.02em}
+.hero h2 em{font-style:normal;color:var(--hl)}
+.hero .lead{color:var(--sub);font-size:14px;margin:0 0 14px}
+.hero ol{margin:0 0 14px;padding-left:20px;font-size:14px}
+.hero ol li{margin-bottom:6px}
+.hero ol b{color:var(--navy)}
+.hero .feats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.hero .feats span{font-size:12px;font-weight:700;background:var(--hl-bg);color:var(--navy);border-radius:999px;padding:4px 10px}
+.hero .acts{display:flex;gap:8px;flex-wrap:wrap}
+.hero .acts button{font-size:14px;padding:10px 16px}
+@media (max-width:520px){.topbar{padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px))}.topbar .btns{gap:6px}.topbar .btns button{font-size:12px;padding:7px 10px}.topbar .note{font-size:11px}}
+.site-foot{border-top:1px solid var(--line);margin-top:18px;padding-top:12px;font-size:11.5px;color:var(--sub);line-height:1.7}
+.site-foot b{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -238,14 +299,16 @@ table.f td{font-size:9.4pt}
 <div class="topbar">
   <div>
     <h1>보험금 청구서 <em>자동작성</em></h1>
-    <div class="note">고객 정보는 [저장]을 누를 때만 이 폰에 암호화 저장 · 사고 내용·서명·첨부는 저장 안 함</div>
+    <div class="note">정무경보험대리점 · 입력값은 서버로 보내지 않고 이 기기 안에서만 처리 · 고객 정보는 [저장] 때만 암호화 보관</div>
   </div>
   <div class="btns">
     <button class="primary" id="btnInstall" hidden>앱 설치</button>
     <span class="chip off" id="srvChip" title="팩스 자동발송 연결 상태" hidden>자동발송 꺼짐</span>
+    <button class="ghost" id="btnDir">팩스번호 안내</button>
     <button class="ghost" id="btnSample">예시 채우기</button>
     <button class="ghost" id="btnClear">전체 지우기</button>
-    <button class="primary" id="btnPrintAll">전체 서명용 PDF</button>
+    <button class="ghost" id="btnPrintAll">전체 서명용 PDF</button>
+    <button class="primary" id="btnFaxAll">전체 팩스 준비</button>
   </div>
 </div>
 
@@ -278,7 +341,8 @@ table.f td{font-size:9.4pt}
         <label><input type="radio" name="medicaid" value="아니요">아니요</label>
         <label><input type="radio" name="medicaid" value="예">예</label>
       </div></div>
-    <div class="row"><label for="p_guard">법정대리인</label><input type="text" id="p_guard" data-k placeholder="미성년자일 때만 (친권자 이름)"></div>
+    <label class="chk"><input type="checkbox" id="minor"> 피보험자가 미성년자예요 (법정대리인이 서명)</label>
+    <div class="row" id="guardRow" hidden><label for="p_guard">법정대리인</label><input type="text" id="p_guard" data-k placeholder="친권자 이름 (예: 부 또는 모)"></div>
     <div class="row"><label for="p_bene">보험수익자</label><input type="text" id="p_bene" data-k placeholder="별도 지정된 경우만"></div>
   </div>
 
@@ -314,11 +378,27 @@ table.f td{font-size:9.4pt}
         <label><input type="radio" name="rtype" value="동일사고 추가청구">동일사고 추가청구</label>
       </div></div>
     <div class="row"><label for="a_date">사고(발병)일</label><input type="date" id="a_date" data-k></div>
+    <div class="row"><label for="a_time">사고 시각</label><input type="time" id="a_time" data-k></div>
     <div class="row"><label for="a_place">사고장소</label><input type="text" id="a_place" data-k></div>
     <div class="row"><label for="h_name">병원명</label><input type="text" id="h_name" data-k></div>
     <div class="row"><label for="h_dept">진료과</label><input type="text" id="h_dept" data-k placeholder="예) 정형외과"></div>
     <div class="row"><label for="dx">진단명</label><input type="text" id="dx" data-k></div>
+    <div class="row"><span class="lb">진료 구분</span>
+      <div class="pills" id="care">
+        <label><input type="radio" name="care" value="통원">통원</label>
+        <label><input type="radio" name="care" value="입원">입원</label>
+        <label><input type="radio" name="care" value="입원·통원">입원·통원</label>
+      </div></div>
     <div class="row top"><label for="story">사고(내원)<br>경위</label><textarea id="story" data-k></textarea></div>
+
+    <div class="sub-box" id="liabBlock" hidden>
+      <div class="cap">배상책임 사고 정보 <span style="font-weight:500;color:var(--sub)">(배상책임 청구서에만 들어갑니다)</span></div>
+      <div class="row"><label for="pol_no">증권번호</label><input type="text" id="pol_no" data-k placeholder="모르면 비워두세요"></div>
+      <div class="row"><label for="v_name">피해자 이름</label><input type="text" id="v_name" data-k></div>
+      <div class="row"><label for="v_tel">피해자 연락처</label><input type="text" id="v_tel" data-k inputmode="tel"></div>
+      <div class="row top"><label for="v_damage">피해 내용</label><textarea id="v_damage" data-k placeholder="예) 아랫집 천장 누수로 도배·전등 파손"></textarea></div>
+      <p class="hint" style="margin:0 0 8px">사고 장소·사고 경위는 위 칸에 쓴 내용이, 피보험자 주소는 2번 주소가 들어갑니다.</p>
+    </div>
 
     <div class="sub-box" id="carBlock" hidden>
       <div class="cap">교통사고 정보</div>
@@ -356,18 +436,20 @@ table.f td{font-size:9.4pt}
 
   <div class="sec">
     <h2><b>5</b>보험금 받을 계좌 · 작성일</h2>
-    <div class="row"><label for="bank">은행</label><input type="text" id="bank" data-k></div>
+    <label class="chk"><input type="checkbox" id="autopay"> 보험료 자동이체 계좌로 받을게요 (계좌 칸 비움)</label>
+    <div class="row"><label for="bank">은행</label><input type="text" id="bank" data-k list="bankList" placeholder="눌러서 고르거나 입력"></div>
     <div class="row"><label for="acct">계좌번호</label><input type="text" id="acct" data-k autocomplete="off" inputmode="numeric"></div>
     <div class="row"><label for="holder">예금주</label><input type="text" id="holder" data-k></div>
     <div class="row"><label for="w_date">작성일</label><input type="date" id="w_date" data-k></div>
-    <p class="hint">계좌를 비우면 보험료 납입계좌 또는 최근 지급계좌로 지급될 수 있습니다(삼성화재 양식 안내).</p>
+    <datalist id="bankList"></datalist>
+    <p class="hint">계좌를 비우면 보험료 납입계좌 또는 최근 지급계좌로 지급될 수 있습니다(삼성화재 양식 안내). 지급 계좌 처리는 보험사 기준을 따릅니다.</p>
   </div>
 
   <div class="sec">
     <h2><b>6</b>청구할 보험사 <span>(선택한 곳마다 1부씩)</span></h2>
     <input type="text" class="ins-search" id="insQ" placeholder="보험사 검색">
     <div class="ins-list" id="insList"></div>
-    <p class="hint"><span class="badge" style="margin:0">공식양식</span> 표시된 곳은 보험사 공식 청구서에 그대로 찍힙니다. 나머지는 표준 양식으로 작성됩니다.</p>
+    <p class="hint"><span class="badge" style="margin:0">공식양식</span> 표시된 곳은 보험사 공식 청구서에 그대로 찍힙니다. 나머지는 표준 양식으로 작성됩니다. 일상생활배상책임 같은 배상 사고는 아래 <b>배상책임</b> 묶음에서 고르세요.</p>
     <div class="row" style="margin-top:8px"><label for="addIns">직접 추가</label>
       <div style="display:flex;gap:6px"><input type="text" id="addIns" placeholder="예) ○○공제"><button id="addInsBtn" style="flex:none">추가</button></div></div>
   </div>
@@ -376,7 +458,7 @@ table.f td{font-size:9.4pt}
     <h2><b>7</b>청구 팩스번호</h2>
     <p class="hint">입력해두면 이 기기에 저장돼 다음부터 자동으로 뜹니다.<br>
     <span class="warn">⚠ 보상(청구) 접수 팩스번호를 보험사 공지·콜센터로 확인 후 입력하세요.</span> 가입설계동의·계약 서류 팩스번호와 다를 수 있습니다.</p>
-    <p class="hint">삼성화재는 보상 팩스 <b>0505-161-5040</b>이 기본으로 들어갑니다.</p>
+    <p class="hint">공식 안내로 확인된 번호는 기본으로 들어갑니다. <button id="btnDir2" style="padding:3px 9px;font-size:11.5px">보험사 팩스번호 안내 보기</button></p>
     <div class="faxbox" id="faxBox"></div>
     <div class="row" style="margin-top:10px"><span class="lb">폰의 모바일팩스 앱</span>
       <div class="pills" id="mfaxApp">
@@ -391,7 +473,7 @@ table.f td{font-size:9.4pt}
     <label class="drop" for="attIn">＋ 사진 찍기 / 파일 선택 (사진·PDF)
       <input type="file" id="attIn" accept="image/*,application/pdf" multiple></label>
     <div class="att-list" id="attList"></div>
-    <p class="hint">팩스에서 청구서·동의서 뒤에 이 순서대로 붙습니다. 사진은 팩스용으로 자동 축소·흑백 처리됩니다.</p>
+    <p class="hint">팩스에서 청구서·동의서 뒤에 이 순서대로 붙습니다. 사진은 서류 모서리를 찾아 <b>반듯하게 펴고 흑백 선명하게</b> 바꿉니다(폰 안에서 처리). 잘못 잡혔으면 [모서리]로 고치세요.</p>
   </div>
 
   <div class="sec">
@@ -404,13 +486,27 @@ table.f td{font-size:9.4pt}
     <div class="statebox" id="srvBox"></div>
   </div>
 
+  <footer class="site-foot">
+    <b>정무경보험대리점</b> · 설계사용 무료 도구<br>
+    입력한 고객 정보·서명·첨부는 어떤 서버로도 보내지 않고 이 기기 화면 안에서만 처리합니다. 고객 정보는 [고객 저장]을 누를 때만 PIN으로 암호화해 이 기기에 보관합니다.<br>
+    공식 양식과 청구 팩스번호는 각 보험사 공식 안내를 기준으로 하며 바뀔 수 있습니다. 보내기 전에 받는 번호를 한 번 더 확인해 주세요.
+  </footer>
+
 </aside>
 
 <main class="preview" id="preview"></main>
 </div>
 <div id="offscreen" aria-hidden="true"></div>
 
-<nav class="bnav" aria-label="화면 이동"><button data-go="top">입력</button><button data-go="sign">고객 서명</button><button data-go="preview" class="go">청구서·팩스</button></nav>
+<nav class="bnav" aria-label="화면 이동"><button data-go="top">입력</button><button data-go="sign">고객 서명</button><button data-go="preview" class="go">청구서·팩스</button><button data-go="dir">팩스번호</button></nav>
+
+<!-- 보험사 청구 팩스번호 안내 -->
+<div class="ov" id="dirOv" hidden role="dialog" aria-modal="true" aria-labelledby="dirTitle">
+  <div class="ov-in">
+    <div class="ov-head"><b id="dirTitle">보험사 청구 팩스번호</b><button id="dirClose">닫기</button></div>
+    <div id="dirBody"></div>
+  </div>
+</div>
 
 <!-- 고객 저장·불러오기 창 -->
 <div class="mo" id="mo" hidden role="dialog" aria-modal="true"><div class="mo-in" id="moIn"></div></div>
@@ -427,6 +523,9 @@ table.f td{font-size:9.4pt}
 
 <script src="vendor/pdf-lib.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';document.head.appendChild(s)"></script>
 <script src="vendor/html2canvas.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';document.head.appendChild(s)"></script>
+<script src="js/sigcodec.js"></script>
+<script src="js/docfix.js"></script>
+<script src="data/fax-directory.js"></script>
 <script>
 // ======================================================================
 //  기본 데이터
@@ -436,6 +535,11 @@ const INS = {
   "생명보험":["삼성생명","한화생명","교보생명","신한라이프","NH농협생명","동양생명","ABL생명","미래에셋생명","KB라이프","흥국생명","DB생명","KDB생명","메트라이프생명","라이나생명","AIA생명","푸본현대생명","iM라이프","BNP파리바카디프생명","하나생명","처브라이프","교보라이프플래닛","IBK연금보험"],
   "공제·기타":["우체국보험","새마을금고공제","수협공제","신협공제","MG새마을금고 공제","군인공제회"]
 };
+// 배상책임(일상생활배상책임 등) 청구는 손해보험사별로 따로 고른다 — 표준 배상책임 청구서로 작성
+const LIAB_SFX=' (배상책임)';
+INS["배상책임 (손해보험)"]=INS["손해보험"].map(n=>n+LIAB_SFX);
+const isLiab=n=>String(n).endsWith(LIAB_SFX), baseIns=n=>isLiab(n)?n.slice(0,-LIAB_SFX.length):n;
+const BANKS=['KB국민은행','신한은행','우리은행','하나은행','NH농협은행','지역농·축협','IBK기업은행','SC제일은행','한국씨티은행','카카오뱅크','케이뱅크','토스뱅크','KDB산업은행','Sh수협은행','iM뱅크(대구)','부산은행','경남은행','광주은행','전북은행','제주은행','우체국','새마을금고','신협'];
 const BRAND = {"삼성화재":"#1428A0","메리츠화재":"#E60012","하나손해보험":"#00857A","현대해상":"#F37321","삼성생명":"#1428A0"};
 const FORM_FILES = {"삼성화재":"forms/samsung-fire.js"};   // 공식 양식이 등록된 보험사
 // 공식 양식이 없는 보험사(표준 양식)용 동의 항목
@@ -452,11 +556,20 @@ let fax = {};
 try{ fax = JSON.parse(localStorage.getItem('claimFax')||'{}') }catch(e){ fax = {} }
 function saveFax(){ try{ localStorage.setItem('claimFax', JSON.stringify(fax)) }catch(e){} }
 // 보험사별 기본 보상(청구) 팩스번호 — 앱을 처음 열 때 한 번 채우고, 이후 형이 고친 번호는 그대로 둔다
-const DEFAULT_FAX = {"삼성화재":"0505-161-5040"};
+// data/fax-directory.js 의 번호 중 보험사 공식 안내로 확인된 것(verified·changed)만 기본값으로 쓴다
+const DIR=(window.FAX_DIR&&Array.isArray(window.FAX_DIR.items))?window.FAX_DIR.items:[];
+const dirOf=n=>DIR.find(x=>x.name===n)||null;
+const DEFAULT_FAX={"삼성화재":"0505-161-5040"};
+DIR.forEach(x=>{ if((x.status==='verified'||x.status==='changed')&&x.fax) DEFAULT_FAX[x.name]=x.fax });
 try{
-  if(localStorage.getItem('claimFaxDefaultsV')!=='1'){ Object.assign(fax, DEFAULT_FAX); saveFax(); localStorage.setItem('claimFaxDefaultsV','1'); }
-}catch(e){}
-Object.keys(DEFAULT_FAX).forEach(k=>{ if(!fax[k]) fax[k]=DEFAULT_FAX[k] });
+  if(localStorage.getItem('claimFaxDefaultsV')!=='1'){ Object.assign(fax, DEFAULT_FAX); localStorage.setItem('claimFaxDefaultsV','1'); }
+  Object.keys(DEFAULT_FAX).forEach(k=>{ if(!fax[k]) fax[k]=DEFAULT_FAX[k] }); saveFax();
+}catch(e){ Object.keys(DEFAULT_FAX).forEach(k=>{ if(!fax[k]) fax[k]=DEFAULT_FAX[k] }) }
+// 저장해 둔 번호가 보험사가 바꾸기 전 옛 번호면 알려준다
+function faxFlag(n){ const x=dirOf(n); if(!x||!fax[n]) return '';
+  const cur=onlyDigits(fax[n]), olds=[].concat(x.oldFax||[]).map(onlyDigits).filter(Boolean);
+  if(olds.includes(cur)&&x.fax&&onlyDigits(x.fax)!==cur) return `예전 번호예요 → 공식 안내 ${x.fax}`;
+  return ''; }
 // SK브로드밴드 모바일팩스 앱 (안드로이드 패키지)
 const MFAX_APPS = {"com.dho.mobilefax":"모바일팩스","com.dho.mobilefaxlite":"모바일팩스(발신전용)"};
 let mfaxPkg='com.dho.mobilefax';
@@ -482,27 +595,30 @@ function val(id){ const el=document.getElementById(id); return el?el.value.trim(
 function radio(n){ const el=document.querySelector(`input[name="${n}"]:checked`); return el?el.value:'' }
 function checks(id){ return [...document.querySelectorAll(`#${id} input:checked`)].map(i=>i.value) }
 function collect(){
-  const same=$('#same').checked;
+  const same=$('#same').checked, minor=$('#minor').checked, autopay=$('#autopay').checked;
   const insured={name:val('p_name'),rrn:val('p_rrn'),tel:val('p_tel'),job:val('p_job'),addr:val('p_addr'),email:val('p_mail')};
   const holder={name:val('c_name'),rrn:val('c_rrn'),tel:val('c_tel')};
   if(same){ insured.name=holder.name; insured.rrn=holder.rrn; insured.tel=holder.tel; }
   const recv=radio('recv'), r=recv==='계약자'?holder:insured, notice=checks('notice');
   const det=[]; if(notice.includes('e-mail')&&insured.email) det.push(insured.email); if(notice.includes('우편')&&insured.addr) det.push(insured.addr);
   return {
-    insured, holder, same, medicaid:radio('medicaid'), guardian:val('p_guard'), beneficiary:val('p_bene'),
+    insured, holder, same, medicaid:radio('medicaid'), minor, guardian:minor?val('p_guard'):'', beneficiary:val('p_bene'),
     recv, recvName:r.name, recvTel:r.tel, notice, noticeDetail:det.join(' / '),
-    atype:radio('atype'), rtype:radio('rtype'), date:val('a_date'), place:val('a_place'),
-    hospital:val('h_name'), dept:val('h_dept'), dx:val('dx'), story:val('story'),
+    atype:radio('atype'), rtype:radio('rtype'), date:val('a_date'), time:val('a_time'), place:val('a_place'),
+    hospital:val('h_name'), dept:val('h_dept'), dx:val('dx'), care:radio('care'), story:val('story'),
+    liab:{policy:val('pol_no'), vname:val('v_name'), vtel:val('v_tel'), damage:val('v_damage')},
     car:{no:val('car_no'),seat:radio('seat'),autoIns:radio('autoIns'),insurer:val('car_ins'),contact:val('car_contact')},
     cov:checks('cov'), exclude:val('exclude'),
-    bank:val('bank'), acct:val('acct'), acctHolder:val('holder'), writeDate:val('w_date')
+    autopay, bank:autopay?'':val('bank'), acct:autopay?'':val('acct'), acctHolder:autopay?'':val('holder'), writeDate:val('w_date')
   };
 }
 function missing(d,ins){
   const m=[];
   if(!d.insured.name) m.push('피보험자 이름'); if(!d.insured.rrn) m.push('주민번호');
-  if(!d.date) m.push('사고일'); if(!d.dx) m.push('진단명');
-  if(FORM_FILES[ins]&&!d.medicaid) m.push('의료급여 수급권자 여부');
+  if(!d.date) m.push('사고일');
+  if(isLiab(ins)){ if(!d.liab.vname) m.push('피해자 이름'); if(!d.story) m.push('사고 경위'); if(!d.liab.damage) m.push('피해 내용'); }
+  else { if(!d.dx) m.push('진단명'); if(FORM_FILES[ins]&&!d.medicaid) m.push('의료급여 수급권자 여부'); }
+  if(d.minor&&!d.guardian) m.push('법정대리인 이름');
   if(!d.notice.length) m.push('안내방법');
   return m;
 }
@@ -516,7 +632,7 @@ function renderInsList(){
   for(const [g,arr] of Object.entries(groups)){
     const f=arr.filter(n=>!q||n.includes(q)); if(!f.length) continue;
     h+=`<div class="ins-grp">${g}</div>`;
-    f.forEach(n=>{h+=`<label class="ins-item"><input type="checkbox" value="${esc(n)}" ${selected.has(n)?'checked':''}><span class="dot" style="background:${BRAND[n]||'#1b2a4e'}"></span>${esc(n)}${FORM_FILES[n]?'<span class="badge">공식양식</span>':''}</label>`});
+    f.forEach(n=>{h+=`<label class="ins-item"><input type="checkbox" value="${esc(n)}" ${selected.has(n)?'checked':''}><span class="dot" style="background:${BRAND[baseIns(n)]||'#1b2a4e'}"></span>${esc(n)}${FORM_FILES[n]?'<span class="badge">공식양식</span>':''}</label>`});
   }
   $('#insList').innerHTML=h||'<div class="hint" style="padding:6px">검색 결과가 없습니다.</div>';
 }
@@ -534,8 +650,10 @@ $('#addInsBtn').addEventListener('click',()=>{
 function renderFax(){
   const list=[...selected];
   if(!list.length){ $('#faxBox').innerHTML='<div class="hint" style="padding:8px">보험사를 먼저 선택하세요.</div>'; return; }
-  $('#faxBox').innerHTML=list.map(n=>`<div class="faxrow ${validFax(fax[n])?'':'empty'}"><span>${esc(n)}</span>
-    <input type="text" data-fax="${esc(n)}" value="${esc(fax[n]||'')}" placeholder="⚠확인필요" inputmode="tel" aria-label="${esc(n)} 청구 팩스번호"><button data-copy="${esc(n)}">복사</button></div>`).join('');
+  $('#faxBox').innerHTML=list.map(n=>{ const fl=faxFlag(n), x=dirOf(n);
+    return `<div class="faxrow ${validFax(fax[n])?'':'empty'}"><span>${esc(n)}</span>
+    <input type="text" data-fax="${esc(n)}" value="${esc(fax[n]||'')}" placeholder="⚠확인필요" inputmode="tel" aria-label="${esc(n)} 청구 팩스번호"><button data-copy="${esc(n)}">복사</button>
+    ${fl?`<div class="flag">⚠ ${esc(fl)}<button data-usefax="${esc(n)}">새 번호 쓰기</button></div>`:(!validFax(fax[n])&&x&&x.fax&&x.status==='unverified'?`<div class="flag">공식 확인 전 번호 ${esc(x.fax)} — 보험사에 확인 후 입력</div>`:'')}</div>` }).join('');
 }
 function setFax(n,v,from){
   fax[n]=v.trim(); saveFax();
@@ -545,6 +663,7 @@ function setFax(n,v,from){
 }
 $('#faxBox').addEventListener('input',e=>{ const n=e.target.dataset.fax; if(n) setFax(n,e.target.value,e.target) });
 $('#faxBox').addEventListener('click',e=>{
+  const u=e.target.dataset.usefax; if(u){ const x=dirOf(u); if(x&&x.fax){ setFax(u,x.fax); renderFax(); toast(`${u} 팩스번호를 ${x.fax}(으)로 바꿨어요`) } return }
   const n=e.target.dataset.copy; if(!n||!fax[n]) return;
   const done=()=>{e.target.textContent='완료';setTimeout(()=>e.target.textContent='복사',1200)};
   navigator.clipboard?.writeText(fax[n]).then(done).catch(()=>{});
@@ -639,9 +758,58 @@ function fmtDate(d){ if(!d) return '&nbsp;&nbsp;&nbsp;&nbsp;년&nbsp;&nbsp;&nbsp
 function tint(hex){ const n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,m=c=>Math.round(c*.09+255*.91); return `rgb(${m(r)},${m(g)},${m(b)})` }
 function groupAgree(e,key){ const v=Object.values(e.consents[key]||{}); if(!v.length) return null; if(v.every(x=>x===true)) return true; if(v.some(x=>x===false)) return false; return null }
 function agreeBoxes(e,key){ const a=e?groupAgree(e,key):null; return `${a===true?'☑':'☐'} 동의함 ${a===false?'☑':'☐'} 동의하지 않음` }
+function acctRow(d,V){
+  return d.autopay?`<tr><td colspan="6">☑ 보험료 자동이체 계좌로 지급 요청 <span style="font-size:8pt;color:#555">(계좌 처리는 회사 기준에 따름)</span></td></tr>`
+    :`<tr><th>은행명</th><td>${V(d.bank)}</td><th>계좌번호</th><td>${V(d.acct)}</td><th>예금주</th><td>${V(d.acctHolder)}</td></tr>`;
+}
+function agreeBlock(ins,e){
+  return `<div class="agree"><b>개인(신용)정보 수집·이용·제공 및 조회 동의</b><br>
+    보험금 청구 심사·지급을 위한 개인(신용)정보 및 민감정보(질병·상해 정보)의 수집·이용·조회·제공 동의는 ${esc(baseIns(ins))}의 보험금 청구 동의서 양식을 따릅니다.<br>
+    <span class="cb">수집·이용 ${agreeBoxes(e,'collect')}</span><span class="cb">조회 ${agreeBoxes(e,'inquire')}</span><span class="cb">제공 ${agreeBoxes(e,'provide')}</span><br>
+    <span style="color:#555">※ ${e?'고객이 서명 화면에서 직접 선택한 내용입니다.':'동의 체크와 서명은 고객이 직접 작성합니다.'}</span></div>`;
+}
+const dateTime=d=>`<span class="v">${fmtDate(d.date)}${d.time?' '+esc(d.time):''}</span>`;
+function liabSheet(ins,opt={}){
+  const d=collect(), V=v=>`<span class="v">${esc(v)}</span>`, e=opt.sign||null, base=baseIns(ins);
+  const brand=BRAND[base]||'#1b2a4e', f=fax[ins], others=[...selected].filter(n=>n!==ins&&isLiab(n)).map(baseIns);
+  const sig=role=>e&&e.mainRole===role?`<img src="${e.mainURL}" alt="서명">`:'';
+  const C4='<colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col style="width:35%"></colgroup>';
+  return `<section class="sheet" style="--brand:${brand};--brand-bg:${tint(brand)}">
+  <div class="sh-head"><div class="sh-co">${esc(base)}</div><div class="sh-title" style="font-size:16pt;letter-spacing:.12em;margin-right:-.12em">배상책임 보험금 청구서</div>
+    <div class="sh-fax">청구 접수 팩스<br><b>${f?esc(f):'(팩스번호 미입력)'}</b></div></div>
+  <div class="sh-h3">1. 피보험자 (사고를 낸 분) 및 보상안내 받으실 분</div>
+  <table class="f"><colgroup><col style="width:15%"><col style="width:13%"><col style="width:22%"><col style="width:13%"><col style="width:37%"></colgroup>
+    <tr><th rowspan="3">피보험자</th><th>성명</th><td>${V(d.insured.name)}</td><th>주민번호</th><td>${V(d.insured.rrn)}</td></tr>
+    <tr><th>연락처</th><td>${V(d.insured.tel)}</td><th>증권번호</th><td>${V(d.liab.policy)}</td></tr>
+    <tr><th>주소</th><td colspan="3">${V(d.insured.addr)}</td></tr>
+    <tr><th>계약자</th><th>성명</th><td>${V(d.holder.name)}</td><th>주민번호</th><td>${V(d.holder.rrn)}</td></tr>
+    <tr><th>보상안내</th><th>수령인</th><td>${V(d.recvName)} ${V(d.recvTel)}</td><th>안내방법</th><td>${box(d.notice,['문자메시지','e-mail','팩스','유선(전화)','우편'])}${d.noticeDetail?'<br>'+V(d.noticeDetail):''}</td></tr>
+  </table>
+  <div class="sh-h3">2. 피해자</div>
+  <table class="f">${C4}<tr><th>성명</th><td>${V(d.liab.vname)}</td><th>연락처</th><td>${V(d.liab.vtel)}</td></tr></table>
+  <div class="sh-h3">3. 사고 내용</div>
+  <table class="f">${C4}
+    <tr><th>사고 일시</th><td>${dateTime(d)}</td><th>청구 유형</th><td>${box([d.rtype],['최초청구','동일사고 추가청구'])}</td></tr>
+    <tr><th>사고 장소</th><td colspan="3">${V(d.place)}</td></tr>
+    <tr><th>사고 경위</th><td colspan="3" style="height:26mm;vertical-align:top">${V(d.story)}</td></tr>
+    <tr><th>피해 내용</th><td colspan="3" style="height:20mm;vertical-align:top">${V(d.liab.damage)}</td></tr>
+  </table>
+  <p class="small">※ 피해자와 배상 금액을 합의하기 전에 보험사와 먼저 상의해 주세요. 보상 여부와 금액은 약관과 회사 기준에 따릅니다.</p>
+  <div class="sh-h3">4. 다른 배상책임보험 가입사항</div>
+  <table class="f"><colgroup><col style="width:15%"><col></colgroup>
+    <tr><th>보험회사</th><td>${others.length?others.map((n,i)=>`<span class="cb">${i+1}. ${V(n)}</span>`).join(''):'<span class="cb">☐ 다른 배상책임보험 가입사항 없음</span>'}</td></tr></table>
+  <div class="sh-h3">5. 보험금 수령 계좌</div>
+  <table class="f"><colgroup><col style="width:15%"><col style="width:20%"><col style="width:12%"><col style="width:28%"><col style="width:10%"><col style="width:15%"></colgroup>${acctRow(d,V)}</table>
+  ${agreeBlock(ins,e)}
+  <div class="sign"><span>작성일 ${d.writeDate?fmtK(d.writeDate):''}</span><span>피보험자 <span class="line">${esc(d.insured.name)} ${sig('피보험자')}</span> (서명)</span></div>
+  ${d.guardian?`<div class="sign" style="margin-top:6px"><span>법정대리인 <span class="line">${esc(d.guardian)} ${sig('법정대리인')}</span> (서명)</span></div>`:''}
+  <div class="sh-foot"><span>표준 배상책임 청구서 · 보험사 공식 양식 요구 시 해당 양식 사용</span><span>${esc(base)} 제출용</span></div>
+</section>`;
+}
 function sheet(ins,opt={}){
+  if(isLiab(ins)) return liabSheet(ins,opt);
   const d=collect(), V=v=>`<span class="v">${esc(v)}</span>`, e=opt.sign||null;
-  const others=[...selected].filter(n=>n!==ins), brand=BRAND[ins]||'#1b2a4e', f=fax[ins];
+  const others=[...selected].filter(n=>n!==ins&&!isLiab(n)), brand=BRAND[ins]||'#1b2a4e', f=fax[ins];
   const sig=role=>e&&e.mainRole===role?`<img src="${e.mainURL}" alt="서명">`:'';
   const car=d.atype==='교통사고'?`<tr><th>교통사고 정보</th><td colspan="3">차량번호 ${V(d.car.no)} · 탑승위치 ${box([d.car.seat],['운전석','조수석','뒷자리','보행중','기타'])} · 자동차보험 접수 ${box([d.car.autoIns],['아니요','예'])} ${d.car.insurer?`(${V(d.car.insurer)} ${V(d.car.contact)})`:''}</td></tr>`:'';
   return `<section class="sheet" style="--brand:${brand};--brand-bg:${tint(brand)}">
@@ -662,19 +830,17 @@ function sheet(ins,opt={}){
   <div class="sh-h3">3. 청구사항</div>
   <table class="f"><colgroup><col style="width:15%"><col style="width:35%"><col style="width:15%"><col style="width:35%"></colgroup>
     <tr><th>사고 유형</th><td>${box([d.atype],['질병','상해','교통사고'])}</td><th>청구 유형</th><td>${box([d.rtype],['최초청구','동일사고 추가청구'])}</td></tr>
-    <tr><th>사고(발병)일</th><td><span class="v">${fmtDate(d.date)}</span></td><th>진단명</th><td>${V(d.dx)}</td></tr>
+    <tr><th>사고(발병)일시</th><td>${dateTime(d)}</td><th>진단명</th><td>${V(d.dx)}</td></tr>
     <tr><th>사고장소</th><td>${V(d.place)}</td><th>병원(진료과)</th><td>${V(d.hospital)}${d.dept?' ('+V(d.dept)+')':''}</td></tr>
     <tr><th>사고(내원) 경위</th><td colspan="3" style="height:16mm;vertical-align:top">${V(d.story)}</td></tr>${car}
+    <tr><th>진료 구분</th><td colspan="3">${box([d.care],['통원','입원','입원·통원'])}</td></tr>
     <tr><th>청구 담보</th><td colspan="3">${box(d.cov,['실손의료비','입원일당','진단비','수술비','후유장해','사망','비용'])}${d.exclude?`<br>☑ 특정담보 보상제외 요청: ${V(d.exclude)}`:''}</td></tr>
   </table>
   <p class="small">※ 표시 여부와 관계없이 지급 가능한 보험금 검토 여부는 회사 기준에 따릅니다.</p>
   <div class="sh-h3">4. 보험금 수령 계좌</div>
   <table class="f"><colgroup><col style="width:15%"><col style="width:20%"><col style="width:12%"><col style="width:28%"><col style="width:10%"><col style="width:15%"></colgroup>
-    <tr><th>은행명</th><td>${V(d.bank)}</td><th>계좌번호</th><td>${V(d.acct)}</td><th>예금주</th><td>${V(d.acctHolder)}</td></tr></table>
-  <div class="agree"><b>개인(신용)정보 수집·이용·제공 및 조회 동의</b><br>
-    보험금 청구 심사·지급을 위한 개인(신용)정보 및 민감정보(질병·상해 정보)의 수집·이용·조회·제공 동의는 ${esc(ins)}의 보험금 청구 동의서 양식을 따릅니다.<br>
-    <span class="cb">수집·이용 ${agreeBoxes(e,'collect')}</span><span class="cb">조회 ${agreeBoxes(e,'inquire')}</span><span class="cb">제공 ${agreeBoxes(e,'provide')}</span><br>
-    <span style="color:#555">※ ${e?'고객이 서명 화면에서 직접 선택한 내용입니다.':'동의 체크와 서명은 고객이 직접 작성합니다.'}</span></div>
+    ${acctRow(d,V)}</table>
+  ${agreeBlock(ins,e)}
   <div class="sign"><span>작성일 ${d.writeDate?fmtK(d.writeDate):''}</span><span>피보험자 <span class="line">${esc(d.insured.name)} ${sig('피보험자')}</span> (서명)</span></div>
   <div class="sign" style="margin-top:6px"><span>법정대리인 <span class="line">${esc(d.guardian)} ${sig('법정대리인')}</span> (서명)</span><span>보험수익자 <span class="line">${esc(d.beneficiary)} ${e&&e.bene?`<img src="${e.beneURL}" alt="서명">`:''}</span> (서명)</span></div>
   <div class="sh-foot"><span>표준 양식 · 보험사 공식 양식 요구 시 해당 양식 사용</span><span>${esc(ins)} 제출용</span></div>
@@ -701,24 +867,28 @@ function signState(ins){
 function renderSignBox(){
   const b=$('#signBox');
   if(!esign){
-    b.innerHTML=`<span class="chip off">서명 전</span>
-      <div class="hint" style="margin-top:6px">입력과 보험사 선택을 마친 뒤 폰을 고객에게 건네면, 고객이 청구 내용을 확인하고 동의 항목을 직접 고른 다음 서명합니다. 서명은 이 화면에만 있고 저장되지 않습니다.</div>
+    const pr=lastReq();
+    b.innerHTML=`<span class="chip off">서명 전</span>${pr?` <span class="chip mode">카톡 서명 요청 ${hhmm(new Date(pr.t))} · 답장 기다리는 중</span>`:''}
+      <div class="hint" style="margin-top:6px"><b>함께 있을 때</b>는 폰을 고객에게 건네 [이 폰에서 서명]. <b>멀리 있을 때</b>는 [카톡으로 서명 요청] → 고객이 링크에서 동의를 고르고 서명해 보내면, 그 링크를 누르거나 [받은 서명 넣기]로 바로 들어갑니다.</div>
       ${signMsg?`<div class="warn" style="margin-top:6px">${esc(signMsg)}</div>`:''}
-      <div class="acts"><button class="blue" id="btnSign">고객 서명 받기</button></div>`;
+      <div class="acts"><button class="blue" id="btnSign">이 폰에서 서명</button><button id="btnReq">카톡으로 서명 요청</button><button id="btnPaste">받은 서명 넣기</button></div>`;
   } else {
     const s=signState(), req=['collect','provide','inquire'].flatMap(g=>Object.values(esign.consents[g]||{}));
     const yes=req.filter(v=>v===true).length, o=esign.consents.optional||{}, optTxt=(o.sens==null&&o.credit==null)?'선택 안 함':Object.values(o).map(v=>v===true?'동의':v===false?'미동의':'-').join('/');
     b.innerHTML=`${s.ok?'<span class="chip ok">서명 완료</span>':`<span class="chip bad">다시 서명 필요</span>`}
-      <div style="margin-top:6px">${esc(esign.mainRole)} ${esc(esign.mainName)}${esign.bene?` · 보험수익자 ${esc(esign.beneName)}`:''} · ${hhmm(esign.at)}<br>
+      ${esign.remote?' <span class="chip mode">카톡 원격 서명</span>':''}
+      <div style="margin-top:6px">${esc(esign.mainRole)} ${esc(esign.mainName)}${esign.bene?` · 보험수익자 ${esc(esign.beneName)}`:''} · ${esign.remote?`${esign.at.getMonth()+1}/${esign.at.getDate()} `:''}${hhmm(esign.at)}<br>
       필수 동의 ${yes}/${req.length} · 선택 동의 ${esc(optTxt)}<br>대상: ${esc(esign.insurers.join(', '))}</div>
       ${s.ok?'':`<div class="warn" style="margin-top:4px">${esc(s.why)}</div>`}
       ${yes<req.length?'<div class="warn" style="margin-top:4px">필수 항목 중 동의하지 않은 항목이 있어 청구 처리가 안 될 수 있습니다.</div>':''}
-      <div class="acts"><button class="blue" id="btnSign">${s.ok?'다시 받기':'다시 서명 받기'}</button><button id="btnUnsign">서명 지우기</button></div>`;
+      <div class="acts"><button class="blue" id="btnSign">${s.ok?'이 폰에서 다시 받기':'이 폰에서 다시 서명'}</button><button id="btnReq">카톡으로 ${s.ok?'다시 ':''}요청</button><button id="btnPaste">받은 서명 넣기</button><button id="btnUnsign">서명 지우기</button></div>`;
   }
 }
 $('#signBox').addEventListener('click',e=>{
   if(e.target.id==='btnSign') openSign();
   if(e.target.id==='btnUnsign'){ esign=null; render(); }
+  if(e.target.id==='btnReq') reqRemote();
+  if(e.target.id==='btnPaste') pasteReply();
 });
 
 // 서명 패드
@@ -774,13 +944,14 @@ function showStep(){
   [...$('#ovSteps').children].forEach((s,i)=>s.classList.toggle('on',i<OV.step));
   $('#ovBack').textContent=OV.step===1?'취소':'이전';
   if(OV.step===1){
-    const acct=d.bank||d.acct?`${esc(d.bank)} ${d.acct?'****'+esc(onlyDigits(d.acct).slice(-4)):''} (예금주 ${esc(d.acctHolder)})`:'미기재 (보험료 납입계좌 등으로 지급될 수 있음)';
+    const acct=acctText(d,true);
     b.innerHTML=`<h3>청구 내용 확인</h3>
       <p class="lead"><b>${esc(d.insured.name)}</b> 고객님, 아래 내용으로 보험금을 청구합니다. 맞는지 확인해 주세요.</p>
       <table class="sum">
         <tr><th>피보험자</th><td>${esc(d.insured.name)}${d.guardian?` (법정대리인 ${esc(d.guardian)})`:''}</td></tr>
-        <tr><th>사고(발병)일</th><td>${esc(fmtK(d.date))||'-'} · ${esc(d.atype)}</td></tr>
+        <tr><th>사고(발병)일</th><td>${esc(fmtK(d.date))||'-'}${d.time?' '+esc(d.time):''} · ${esc(d.atype)}${d.care?' · '+esc(d.care):''}</td></tr>
         <tr><th>병원 · 진단명</th><td>${esc(d.hospital)}${d.dept?` (${esc(d.dept)})`:''}<br>${esc(d.dx)}</td></tr>
+        ${[...selected].some(isLiab)?`<tr><th>배상책임</th><td>피해자 ${esc(d.liab.vname)||'-'}<br>${esc(d.liab.damage)}</td></tr>`:''}
         <tr><th>청구 담보</th><td>${esc(d.cov.join(', '))||'표시 안 함 (지급 가능한 보험금 전체 검토)'}</td></tr>
         <tr><th>받으실 계좌</th><td>${acct}</td></tr>
         <tr><th>청구 보험사</th><td>${esc([...selected].join(', '))}</td></tr>
@@ -900,12 +1071,14 @@ function HEALTH_BUST(){ SV.info=null }
 const SP={};
 function sp(ins){ return SP[ins]||(SP[ins]={open:false, src:'esign', scans:[], confirm:false, phase:'idle', text:'', tone:'', receipt:null, rn:null, pages:null, timer:null, last:null, file:null, builtKey:'', mphase:'idle', sentAt:null}) }
 // 팩스용 PDF를 만든 뒤 서명·첨부·서명본이 바뀌면 다시 만들게 하는 표시
-function builtKeyOf(ins){ const S=sp(ins); return JSON.stringify([signHash(), S.src, esign?+esign.at:0, S.scans.map(a=>a.name+':'+a.file.size), atts.map(a=>a.name+':'+a.file.size)]) }
+const attKey=a=>a.name+':'+a.file.size+':'+a.ver+(a.bw?'b':'');
+function builtKeyOf(ins){ const S=sp(ins); return JSON.stringify([signHash(), S.src, esign?+esign.at:0, S.scans.map(attKey), atts.map(attKey)]) }
 function canBuild(ins){
   const S=sp(ins), why=[];
   if(S.src==='esign'){ const s=signState(ins); if(!s.ok) why.push(s.why); }
   else if(!S.scans.length) why.push('종이 서명본 사진을 올려주세요');
   if(!validFax(fax[ins])) why.push('받는 팩스번호를 확인하세요');
+  if(atts.concat(S.scans).some(a=>a.busy)) why.push('첨부 사진 정리 중이에요 — 잠시만요');
   if(!S.confirm) why.push('받는 곳·팩스번호·서명 확인에 체크하세요');
   return {ok:!why.length, why};
 }
@@ -982,12 +1155,27 @@ function sendbar(ins){
     <div class="st"></div>
   </div>${S.open?spHTML(ins):''}`;
 }
+const HERO=`<div class="hero">
+  <h2>고객 정보 한 번 입력하면<br><em>보험사 청구서가 한 번에</em> 채워집니다</h2>
+  <p class="lead">설계사가 고객 대신 청구서를 준비하고, 고객은 동의와 서명만. 입력값은 이 기기 밖으로 나가지 않습니다.</p>
+  <ol>
+    <li><b>고객·사고 정보 입력</b> — [고객 저장]해 두면 다음엔 불러오기 한 번</li>
+    <li><b>청구할 보험사 고르기</b> — 공식 양식은 그대로 찍고, 나머지는 표준 양식 · 배상책임 청구도</li>
+    <li><b>고객 서명</b> — 함께 있으면 이 폰에서, 멀리 있으면 카톡 링크로</li>
+    <li><b>모바일팩스로 보내기</b> — 보험사 청구 팩스번호 자동 입력, 첨부 사진은 반듯하게 펴서</li>
+  </ol>
+  <div class="feats"><span>공식 양식 자동 기입</span><span>배상책임 청구서</span><span>보험사 팩스번호 안내</span><span>카톡 원격 서명</span><span>첨부 반듯하게·흑백</span><span>고객 정보 암호화 저장</span></div>
+  <div class="acts"><button class="primary" data-hero="sample">예시로 둘러보기</button><button data-hero="dir">팩스번호 안내</button></div>
+</div>`;
 function render(){
   syncSame();
   $('#carBlock').hidden = radio('atype')!=='교통사고';
+  $('#guardRow').hidden = !$('#minor').checked;
+  $('#liabBlock').hidden = ![...selected].some(isLiab);
+  { const ap=$('#autopay').checked; ['bank','acct','holder'].forEach(id=>$('#'+id).disabled=ap); }
   renderSignBox();
   const list=[...selected], pv=$('#preview');
-  if(!list.length){ pv.innerHTML='<div class="empty-prev"><b>6번 \'청구할 보험사\'에서 보험사를 고르세요</b><br>고른 보험사마다 청구서가 1부씩 만들어집니다.<br>처음이면 위의 [예시 채우기]로 둘러보세요.</div>'; return; }
+  if(!list.length){ pv.innerHTML=HERO; return; }
   pv.innerHTML=list.map(ins=>sendbar(ins)+(FORM_FILES[ins]
     ?`<div class="official" data-ins="${esc(ins)}"><canvas width="1241" height="1754" aria-label="${esc(ins)} 공식 청구서 미리보기"></canvas><p class="o-msg">공식 양식 불러오는 중…</p></div>`
     :sheet(ins,{sign:signState(ins).ok?esign:null}))).join('');
@@ -1001,22 +1189,43 @@ document.querySelector('.panel').addEventListener('input',e=>{
   const t=e.target; if(t.dataset.fax!==undefined||['insQ','addIns','attIn','same','srvKey'].includes(t.id)||t.closest('#insList')||t.name==='mfaxApp') return;
   render();
 });
+$('#preview').addEventListener('click',e=>{ const h=e.target.dataset.hero; if(h==='sample') $('#btnSample').click(); if(h==='dir') openDir(); });
 
 // ======================================================================
 //  첨부 서류
 // ======================================================================
-function fileEntry(f){ return {name:f.name,type:f.type,file:f,url:f.type.startsWith('image/')?URL.createObjectURL(f):null} }
+function fileEntry(f){ return {name:f.name,type:f.type,file:f,url:f.type.startsWith('image/')?URL.createObjectURL(f):null, quad:null, bw:true, fixed:false, th:null, ver:0, busy:false, img:null} }
+const fullQuad=im=>{ const w=im.naturalWidth||im.width, h=im.naturalHeight||im.height; return [[0,0],[w,0],[w,h],[0,h]] };
+async function makeThumb(a){ try{ const cv=DocFix.render(a.img,a.quad||fullQuad(a.img),{bw:a.bw,maxSide:200}); a.th=cv.toDataURL('image/jpeg',0.8) }catch(e){ a.th=null } }
+// 사진을 올리면: 서류 모서리 찾기 → 찾았으면 반듯하게, 못 찾으면 사진 전체 → 흑백 선명하게 (모두 폰 안에서)
+async function autoFix(a,after){
+  if(!a.url||!window.DocFix) return;
+  a.busy=true; after();
+  try{ a.img=await loadImg(a.url); const r=DocFix.auto(a.img); a.conf=r.conf; a.fixed=r.conf>=0.5; a.quad=a.fixed?r.quad:null; await makeThumb(a) }catch(e){ a.img=null }
+  a.busy=false; a.ver++; after();
+}
+const attsChanged=()=>{ renderAtts(); render() };
 $('#attIn').addEventListener('change',e=>{
-  for(const f of e.target.files){ if(/^image\/|application\/pdf/.test(f.type)) atts.push(fileEntry(f)) }
+  for(const f of e.target.files){ if(/^image\/|application\/pdf/.test(f.type)){ const a=fileEntry(f); atts.push(a); autoFix(a,attsChanged) } }
   e.target.value=''; renderAtts(); render();
 });
+function attMeta(a){
+  if(!a.url) return 'PDF 그대로 붙음';
+  if(a.busy) return '정리 중…';
+  if(!a.img) return '사진을 읽지 못함 · 원본으로 붙음';
+  return `${a.fixed?'<b>반듯하게 폄</b>':'모서리 못 찾음 · 사진 전체'} · ${a.bw?'흑백 선명':'원본 색'}`;
+}
 function renderAtts(){
   $('#attList').innerHTML=atts.map((a,i)=>`<div class="att">
-    <div class="th" style="${a.url?`background-image:url(${a.url})`:''}">${a.url?'':'PDF'}</div>
-    <div class="nm">${i+1}. ${esc(a.name)}</div>
-    <div class="ord"><button data-up="${i}" ${i?'':'disabled'} aria-label="위로">▲</button><button data-del="${i}" aria-label="삭제">✕</button></div></div>`).join('');
+    <div class="th" style="${a.th||a.url?`background-image:url(${a.th||a.url})`:''}">${a.url?'':'PDF'}</div>
+    <div class="nm">${i+1}. ${esc(a.name)}<span class="meta">${attMeta(a)}</span></div>
+    <div class="ord">${a.url&&a.img&&!a.busy?`<button data-fix="${i}">모서리</button>`:''}<button data-up="${i}" ${i?'':'disabled'} aria-label="위로">▲</button><button data-del="${i}" aria-label="삭제">✕</button></div></div>`).join('');
 }
-$('#attList').addEventListener('click',e=>{
+$('#attList').addEventListener('click',async e=>{
+  const fx=e.target.dataset.fix;
+  if(fx!==undefined){ const a=atts[+fx]; if(!a||!a.img) return;
+    const res=await DocFix.editor(a.img,a.quad||fullQuad(a.img),{bw:a.bw}); if(!res) return;
+    a.quad=res.quad; a.bw=res.bw; a.fixed=true; a.ver++; await makeThumb(a); return attsChanged(); }
   const up=e.target.dataset.up, del=e.target.dataset.del;
   if(up!==undefined){ const i=+up; [atts[i-1],atts[i]]=[atts[i],atts[i-1]]; }
   else if(del!==undefined){ const [a]=atts.splice(+del,1); if(a.url) URL.revokeObjectURL(a.url); }
@@ -1029,6 +1238,8 @@ $('#attList').addEventListener('click',e=>{
 // ======================================================================
 const A4=[595.28,841.89];
 async function faxImage(a){
+  if(window.DocFix){ try{ const im=a.img||await loadImg(a.url), cv=DocFix.render(im,a.quad||fullQuad(im),{bw:a.bw!==false,maxSide:2000});
+    return dataBytes(cv.toDataURL('image/jpeg',0.8)) }catch(e){} }
   const im=await loadImg(a.url), s=Math.min(1,2000/Math.max(im.naturalWidth,im.naturalHeight));
   const cv=document.createElement('canvas'); cv.width=Math.round(im.naturalWidth*s); cv.height=Math.round(im.naturalHeight*s);
   const cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height); cx.filter='grayscale(1) contrast(1.15)'; cx.drawImage(im,0,0,cv.width,cv.height);
@@ -1190,7 +1401,7 @@ $('#preview').addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.src){ sp(t.dataset.src).src=t.value; refreshSP(t.dataset.src); }
   if(t.classList.contains('sp-confirm')){ const ins=t.dataset.ins, S=sp(ins); S.confirm=t.checked; refreshSP(ins); if(t.checked&&!S.file&&canBuild(ins).ok) buildFax(ins); }
-  if(t.classList.contains('sp-scan')){ const S=sp(t.dataset.ins); S.scans=[...t.files].filter(f=>/^image\/|application\/pdf/.test(f.type)).map(fileEntry); S.src='scan'; refreshSP(t.dataset.ins); }
+  if(t.classList.contains('sp-scan')){ const ins=t.dataset.ins, S=sp(ins); S.scans=[...t.files].filter(f=>/^image\/|application\/pdf/.test(f.type)).map(fileEntry); S.src='scan'; refreshSP(ins); S.scans.forEach(a=>autoFix(a,()=>refreshSP(ins))); }
 });
 $('#preview').addEventListener('input',e=>{ const t=e.target; if(t.classList.contains('sp-fax')) setFax(t.dataset.fax,t.value,t) });
 
@@ -1216,7 +1427,7 @@ function resetForm(){
   ['recv','rtype'].forEach(n=>{ const f=document.querySelector(`input[name="${n}"]`); if(f) f.checked=true; });
   document.querySelector('#notice input[value="문자메시지"]').checked=true;
   document.querySelector('input[name="atype"][value="상해"]').checked=true;
-  $('#same').checked=true;
+  $('#same').checked=true; $('#minor').checked=false; $('#autopay').checked=false;
   $('#w_date').value=todayStr();
   atts.splice(0).forEach(a=>a.url&&URL.revokeObjectURL(a.url)); renderAtts();
   esign=null;
@@ -1229,11 +1440,12 @@ $('#btnClear').addEventListener('click',()=>{
 });
 $('#btnSample').addEventListener('click',()=>{
   const s={c_name:'홍길동',c_rrn:'900101-1234567',c_tel:'010-1234-5678',p_job:'회사원(사무직)',p_addr:'서울시 강서구 마곡동 (예시)',p_mail:'hong@example.com',p_guard:'',p_bene:'',
-    a_date:'2026-10-02',a_place:'자택 계단',h_name:'튼튼정형외과의원',h_dept:'정형외과',dx:'오른쪽 손목 골절',
+    a_date:'2026-10-02',a_time:'14:30',a_place:'자택 계단',h_name:'튼튼정형외과의원',h_dept:'정형외과',dx:'오른쪽 손목 골절',
     story:'계단에서 넘어져 오른쪽 손목 골절, 정형외과 통원 후 수술',bank:'○○은행',acct:'000-0000-0000 (예시)',holder:'홍길동',w_date:todayStr(),exclude:''};
   Object.entries(s).forEach(([k,v])=>{ const el=document.getElementById(k); if(el) el.value=v });
   document.querySelector('input[name="medicaid"][value="아니요"]').checked=true;
   document.querySelector('input[name="atype"][value="상해"]').checked=true;
+  document.querySelector('input[name="care"][value="통원"]').checked=true;
   document.querySelectorAll('#cov input').forEach(i=>i.checked=['실손의료비','진단비','수술비'].includes(i.value));
   ['삼성화재','메리츠화재'].forEach(n=>selected.add(n));
   renderInsList(); renderFax(); render();
@@ -1267,7 +1479,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) VAULT.hid
 
 // ---- 모달
 function moOpen(html){ $('#moIn').innerHTML=html; $('#mo').hidden=false; document.body.classList.add('locked'); setTimeout(()=>{ const f=$('#moIn').querySelector('input:not([type=file]):not([type=checkbox])'); f&&f.focus() },50) }
-function moClose(){ $('#mo').hidden=true; $('#moIn').innerHTML=''; if($('#signOv').hidden) document.body.classList.remove('locked') }
+function moClose(){ $('#mo').hidden=true; $('#moIn').innerHTML=''; $('#moIn').onkeydown=null; if($('#signOv').hidden&&$('#dirOv').hidden) document.body.classList.remove('locked') }
 $('#mo').addEventListener('click',e=>{ if(e.target.id==='mo') moClose() });
 function pinBox(title,lead,two){
   return new Promise(res=>{
@@ -1310,7 +1522,7 @@ try{ keepRrnBack=localStorage.getItem('claimKeepRrn')!=='0' }catch(e){}
 function readCust(){
   const f={}; CUST_FIELDS.forEach(k=>f[k]=val(k));
   if(!keepRrnBack){ ['c_rrn','p_rrn'].forEach(k=>{ const d=onlyDigits(f[k]); f[k]=d?d.slice(0,6)+'-':'' }) }
-  f.same=$('#same').checked; f.medicaid=radio('medicaid'); f.recv=radio('recv'); f.notice=checks('notice');
+  f.same=$('#same').checked; f.minor=$('#minor').checked; f.autopay=$('#autopay').checked; f.medicaid=radio('medicaid'); f.recv=radio('recv'); f.notice=checks('notice');
   return {f, ins:[...selected]};
 }
 function custLabel(r){ const f=r.f, n=f.same?f.c_name:(f.p_name||f.c_name); return n||'(이름 없음)' }
@@ -1323,7 +1535,7 @@ function custSub(r){
 function applyCust(r){
   resetForm();
   const f=r.f; CUST_FIELDS.forEach(k=>{ const el=document.getElementById(k); if(el) el.value=f[k]||'' });
-  $('#same').checked=f.same!==false;
+  $('#same').checked=f.same!==false; $('#minor').checked=!!(f.minor||f.p_guard); $('#autopay').checked=!!f.autopay;
   const setR=(n,v)=>{ const el=v&&document.querySelector(`input[name="${n}"][value="${v}"]`); if(el) el.checked=true };
   setR('medicaid',f.medicaid); setR('recv',f.recv||'피보험자');
   document.querySelectorAll('#notice input').forEach(i=>i.checked=(f.notice&&f.notice.length?f.notice:['문자메시지']).includes(i.value));
@@ -1425,10 +1637,211 @@ $('#moIn').addEventListener('change',async e=>{
   }
 });
 
+// ======================================================================
+//  알림
+// ======================================================================
+function toast(msg,bad){ let t=$('#toast'); if(!t){ t=document.createElement('div'); t.id='toast'; t.setAttribute('role','status'); document.body.appendChild(t) }
+  t.className='toast'+(bad?' bad':''); t.textContent=msg; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,bad?7000:4500) }
+function acctText(d,mask){
+  if(d.autopay) return '보험료 자동이체 계좌';
+  if(!d.bank&&!d.acct) return '미기재 (보험료 납입계좌 등으로 지급될 수 있음)';
+  const a=onlyDigits(d.acct); return `${d.bank} ${a?(mask?'****'+a.slice(-4):d.acct):''}${d.acctHolder?` (예금주 ${mask?maskName(d.acctHolder):d.acctHolder})`:''}`.trim();
+}
+async function shareOrCopy(text){
+  if(navigator.share){ try{ await navigator.share({text}); return 'shared' }catch(e){ if(e&&e.name==='AbortError') return 'abort' } }
+  try{ await navigator.clipboard.writeText(text); return 'copied' }catch(e){ return 'fail' }
+}
+
+// ======================================================================
+//  카톡 원격 서명 — 서버 없이 링크로 주고받는다
+//  요청: sign/#r=... (청구 요약·동의 종류·열쇠)  /  답장: ./#s=... (동의 선택·서명 획)
+//  보낸 청구 내용은 이 폰에 잠가 3일 보관 — 여는 열쇠는 링크에만 있어 답장이 와야 풀린다
+// ======================================================================
+const PKEY='claimSignPend', REQ_VALID_H=24, PEND_KEEP_H=72;
+const RADIO_NAMES=['medicaid','recv','atype','rtype','seat','autoIns','care'], CHECK_GROUPS=['notice','cov'], BOOL_IDS=['same','minor','autopay'];
+function pendList(){ try{ const l=JSON.parse(localStorage.getItem(PKEY)||'[]'); return Array.isArray(l)?l.filter(p=>Date.now()-p.t<PEND_KEEP_H*3600e3):[] }catch(e){ return [] } }
+function pendSave(l){ try{ localStorage.setItem(PKEY,JSON.stringify(l.slice(-12))) }catch(e){} }
+let curReqHash='';
+function lastReq(){ if(esign) return null; const l=pendList(); const p=l[l.length-1]; return p&&p.h===curReqHash?p:null }
+async function claimHash(){ return SigCodec.sha(signHash()+'|'+[...selected].join('|')) }
+async function refreshReqHash(){ if(!window.SigCodec||!selected.size){ curReqHash=''; return } const h=await claimHash(); if(h!==curReqHash){ curReqHash=h; renderSignBox() } }
+function snapForm(){
+  const v={}, r={}, c={}, b={};
+  document.querySelectorAll('.panel [data-k]').forEach(el=>v[el.id]=el.value);
+  RADIO_NAMES.forEach(n=>r[n]=radio(n)); CHECK_GROUPS.forEach(id=>c[id]=checks(id)); BOOL_IDS.forEach(id=>b[id]=$('#'+id).checked);
+  return {v,r,c,b,sel:[...selected],custom:[...custom]};
+}
+function restoreForm(f){
+  document.querySelectorAll('.panel [data-k]').forEach(el=>el.value=f.v[el.id]??'');
+  BOOL_IDS.forEach(id=>$('#'+id).checked=!!f.b[id]);
+  RADIO_NAMES.forEach(n=>document.querySelectorAll(`input[name="${n}"]`).forEach(i=>i.checked=i.value===f.r[n]));
+  CHECK_GROUPS.forEach(id=>document.querySelectorAll(`#${id} input`).forEach(i=>i.checked=(f.c[id]||[]).includes(i.value)));
+  custom.splice(0,custom.length,...(f.custom||[])); selected.clear(); (f.sel||[]).forEach(n=>selected.add(n));
+  esign=null; Object.values(SP).forEach(S=>{ S.file=null; S.confirm=false; S.sentAt=null });
+  syncSame(); renderInsList(); renderFax();
+}
+async function reqRemote(){
+  if(!window.SigCodec||!crypto.subtle) return toast('이 브라우저에서는 카톡 서명 요청을 만들 수 없어요.',true);
+  const d=collect(), need=[]; if(!d.insured.name) need.push('피보험자 이름'); if(!selected.size) need.push('청구할 보험사'); if(d.minor&&!d.guardian) need.push('법정대리인 이름');
+  if(need.length){ signMsg=`먼저 입력하세요: ${need.join(', ')}`; return renderSignBox() }
+  signMsg='';
+  const ins=[...selected], role=d.guardian?'법정대리인':'피보험자', who=d.guardian||d.insured.name;
+  const id=SigCodec.rid(), h=await claimHash(), box=await SigCodec.seal(snapForm()), t=Date.now();
+  const l=pendList().filter(p=>p.h!==h); l.push({id,h,t,iv:box.iv,ct:box.ct,label:maskName(d.insured.name),ins}); pendSave(l); curReqHash=h;
+  const req={v:1,id,k:box.k,h,t,n:d.insured.name,who,role,ins,f:ins.some(n=>FORM_FILES[n])?'samsung':'generic',bn:d.beneficiary||'',
+    s:{date:(fmtK(d.date)+(d.time?' '+d.time:'')).trim(),atype:ins.every(isLiab)?'배상책임':d.atype,hosp:d.hospital+(d.dept?` (${d.dept})`:''),dx:ins.every(isLiab)?d.liab.damage:d.dx,cov:d.cov,acct:acctText(d,true)}};
+  if(ins.some(isLiab)) req.s.lb={v:maskName(d.liab.vname),d:d.liab.damage};
+  const url=new URL('sign/',location.href.split('#')[0]).href+'#r='+await SigCodec.pack(req,true);
+  const msg=`[보험금 청구 서명 요청]\n${maskName(d.insured.name)} 고객님, 보험금 청구서 서명을 부탁드립니다.\n아래 링크에서 청구 내용을 확인하시고 동의 항목을 고르신 뒤 서명해 주세요. (${REQ_VALID_H}시간 동안 열 수 있어요)\n${url}\n\n서명을 마치면 나오는 [카톡으로 서명 보내기] 버튼으로 이 대화방에 보내주시면 됩니다.`;
+  moOpen(`<h3>카톡으로 서명 요청</h3>
+    <p class="lead">아래 메시지를 고객 카톡방에 보내세요. 고객이 서명해 보낸 링크를 누르면 이 청구서에 서명이 바로 들어갑니다.</p>
+    <textarea class="req-msg" readonly aria-label="보낼 메시지">${esc(msg)}</textarea>
+    <ol class="steps-mini"><li>[카톡으로 보내기] → 공유창에서 <b>카카오톡</b> → 고객 대화방</li>
+      <li>고객 답장 링크를 누르세요. 카톡 안에서 열리면 [크롬에서 열기]가 나옵니다</li>
+      <li>안 되면 답장 메시지를 길게 눌러 복사 → [받은 서명 넣기]</li></ol>
+    <p class="hint">보낸 청구 내용은 답장을 받을 때까지 이 폰에 잠가서 최대 3일 보관해요(여는 열쇠는 링크에만 있음). 링크 안에는 이름 가운데 글자를 가린 청구 요약만 들어갑니다.</p>
+    <p class="mo-err" id="reqErr" style="color:var(--good)"></p>
+    <div class="mo-acts"><button id="reqClose">닫기</button><button id="reqCopy">복사</button><button class="blue" id="reqShare">카톡으로 보내기</button></div>`);
+  $('#reqClose').onclick=()=>{ moClose(); renderSignBox() };
+  $('#reqShare').onclick=async()=>{ const r=await shareOrCopy(msg); if(r==='shared'){ moClose(); renderSignBox(); toast('서명 요청을 보냈어요. 고객 답장 링크를 누르면 서명이 들어갑니다.') } else if(r==='copied') $('#reqErr').textContent='공유창을 열 수 없어 복사했어요. 카톡 대화방에 붙여넣으세요.'; else if(r==='fail') $('#reqErr').textContent='복사하지 못했어요. 위 글을 길게 눌러 복사하세요.' };
+  $('#reqCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(msg); $('#reqErr').textContent='복사했어요. 카톡 대화방에 붙여넣으세요.' }catch(e){ $('#reqErr').textContent='위 글을 길게 눌러 복사하세요.' } };
+  renderSignBox();
+}
+function validReply(x){
+  const okC=c=>c&&typeof c==='object'&&Object.values(c).every(g=>g&&typeof g==='object'&&Object.values(g).every(v=>v===true||v===false||v===null));
+  const okS=g=>g&&Array.isArray(g.s)&&g.s.length&&g.s.length<400&&g.s.every(a=>Array.isArray(a)&&a.length>=2&&a.length<6000&&a.every(Number.isFinite))&&Number.isFinite(g.W)&&Number.isFinite(g.H);
+  return x&&x.v===1&&typeof x.h==='string'&&['피보험자','법정대리인'].includes(x.r)&&okC(x.c)&&okS(x.sg)&&(!x.sg2||okS(x.sg2));
+}
+function applyReply(x){
+  const d=collect(), main=SigCodec.renderStrokes(x.sg,900), bene=x.sg2?SigCodec.renderStrokes(x.sg2,900):null;
+  esign={consents:x.c, main, mainURL:main.toDataURL('image/png'), mainRole:x.r, mainName:x.r==='법정대리인'?d.guardian:d.insured.name,
+    bene, beneURL:bene?bene.toDataURL('image/png'):null, beneName:bene?d.beneficiary:'', at:new Date(x.t||Date.now()), hash:signHash(), insurers:[...selected], remote:true};
+  // 잠가둔 요청 기록은 지우지 않는다(다른 창이 같은 답장을 처리 중일 수 있음) — 3일 지나면 자동 정리
+}
+// 답장 처리. 지금 화면의 청구 내용이 요청 때와 같으면 서명만, 다르면 잠가둔 청구 내용을 풀어 되돌린 뒤 서명
+async function importReply(code,quiet){
+  let x; try{ x=await SigCodec.unpack(code) }catch(e){ if(!quiet) toast('서명 링크가 잘렸거나 올바르지 않아요. 메시지 전체를 복사해 주세요.',true); return false }
+  if(!validReply(x)){ if(!quiet) toast('서명 답장 형식이 맞지 않아요.',true); return false }
+  if(selected.size&&await claimHash()===x.h){ applyReply(x); render(); toast('고객 서명을 넣었어요. 청구서에서 확인하세요.'); return true }
+  if(quiet) return false;
+  const p=pendList().find(q=>q.id===x.id);
+  if(!p){ toast(/KAKAOTALK/i.test(navigator.userAgent)?'카톡 안 브라우저라 앱 기록을 못 읽어요. [크롬에서 열기]로 다시 열어주세요.':'이 폰에 해당 서명 요청 기록이 없어요(3일이 지났거나 다른 폰에서 요청). 같은 내용으로 다시 요청해 주세요.',true); return false }
+  let f; try{ f=await SigCodec.unseal(p,x.k) }catch(e){ toast('서명 요청 기록을 열지 못했어요. 다시 요청해 주세요.',true); return false }
+  const had=atts.length;
+  restoreForm(f);
+  if(await claimHash()!==x.h){ render(); toast('요청 때 청구 내용을 되살렸지만 일치하지 않아요. 다시 요청해 주세요.',true); return false }
+  applyReply(x); render();
+  toast(`${p.label} 고객 청구 내용을 요청 때로 되돌리고 서명을 넣었어요.${had?'':' 첨부 서류는 다시 올려주세요.'}`);
+  return true;
+}
+function pasteReply(){
+  moOpen(`<h3>받은 서명 넣기</h3>
+    <p class="lead">고객이 보낸 카톡 메시지를 길게 눌러 <b>복사</b>한 뒤, 아래 칸에 붙여넣으세요.</p>
+    <textarea id="pasteIn" class="req-msg" style="color:var(--ink)!important" placeholder="여기에 붙여넣기" aria-label="받은 메시지"></textarea>
+    <p class="mo-err" id="pasteErr"></p>
+    <div class="mo-acts"><button id="pasteNo">닫기</button>${navigator.clipboard&&navigator.clipboard.readText?'<button id="pasteClip">복사한 내용 불러오기</button>':''}<button class="blue" id="pasteOk">서명 넣기</button></div>`);
+  const go=async()=>{ const m=($('#pasteIn').value||'').match(/#s=([A-Za-z0-9_-]{20,})/); if(!m) return $('#pasteErr').textContent='서명 링크(#s=…)를 찾지 못했어요. 메시지 전체를 붙여넣어 주세요.';
+    moClose(); await importReply(m[1]) };
+  $('#pasteOk').onclick=go; $('#pasteNo').onclick=moClose;
+  const c=$('#pasteClip'); if(c) c.onclick=async()=>{ try{ $('#pasteIn').value=await navigator.clipboard.readText(); go() }catch(e){ $('#pasteErr').textContent='복사한 내용을 읽지 못했어요. 칸을 길게 눌러 붙여넣으세요.' } };
+}
+// 답장 링크로 열렸을 때 (#s=)
+async function bootReply(){
+  const m=location.hash.match(/^#s=([A-Za-z0-9_-]{20,})/); if(!m) return;
+  const code=m[1], full=location.href; history.replaceState(null,'',location.pathname+location.search);
+  try{ localStorage.setItem('claimSignInbox',JSON.stringify({code,at:Date.now()})) }catch(e){}   // 이미 열려 있는 앱 창에도 알림
+  if(/KAKAOTALK/i.test(navigator.userAgent)&&!pendList().length){
+    const out='kakaotalk://web/openExternal?url='+encodeURIComponent(full);
+    moOpen(`<h3>크롬에서 열어주세요</h3><p class="lead">카카오톡 안 브라우저에서는 이 앱에 저장된 청구서를 읽을 수 없어요. 아래 버튼으로 크롬(또는 설치한 앱)에서 열면 서명이 바로 들어갑니다.</p>
+      <div class="mo-acts"><button id="kkNo">닫기</button><a class="blue" href="${esc(out)}" style="text-decoration:none;font-weight:700;border-radius:8px;padding:10px 16px;background:var(--hl);color:#fff">크롬에서 열기</a></div>`);
+    $('#kkNo').onclick=moClose; return;
+  }
+  await importReply(code);
+}
+window.addEventListener('storage',e=>{ if(e.key!=='claimSignInbox'||!e.newValue) return; try{ const j=JSON.parse(e.newValue); if(Date.now()-j.at<120e3) importReply(j.code,true) }catch(_){} });
+
+// ======================================================================
+//  보험사 청구 팩스번호 안내
+// ======================================================================
+const DIR_ST={verified:['ok','공식 확인'],changed:['mode','번호 바뀜'],unverified:['bad','확인 필요'],none:['off','팩스 접수 안내 없음']};
+const dirUI={q:'',g:'전체'};
+function openDir(){ $('#dirOv').hidden=false; document.body.classList.add('locked'); renderDir(); setTimeout(()=>$('#dirQ')&&$('#dirQ').focus(),60) }
+function closeDir(){ $('#dirOv').hidden=true; if($('#signOv').hidden&&$('#mo').hidden) document.body.classList.remove('locked') }
+function dirRows(){
+  const q=dirUI.q.replace(/\s/g,'');
+  return DIR.filter(x=>(dirUI.g==='전체'||x.group===dirUI.g)&&(!q||x.name.replace(/\s/g,'').includes(q)));
+}
+function dirRowHTML(x){
+  const st=DIR_ST[x.status]||DIR_ST.unverified, mine=fax[x.name], same=mine&&x.fax&&onlyDigits(mine)===onlyDigits(x.fax);
+  const src=(x.sources||[]).slice(0,2).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">출처${i+1}</a>`).join(' · ');
+  return `<div class="dir-row"><div class="t"><b>${esc(x.name)}</b><span class="chip ${st[0]}">${st[1]}</span>${x.virtual?'<span class="chip off">가상팩스</span>':''}${FORM_FILES[x.name]?'<span class="badge" style="margin:0">공식양식</span>':''}</div>
+    <div class="n">${x.fax?`<span class="num ${x.status==='verified'||x.status==='changed'?'':'unv'}">${esc(x.fax)}${x.status==='verified'||x.status==='changed'?'':' (공식 확인 전)'}</span><button data-dcopy="${esc(x.fax)}">복사</button>${x.status==='verified'||x.status==='changed'?(same?'<span class="chip ok">앱에 들어가 있음</span>':`<button class="blue" data-duse="${esc(x.name)}">이 번호 쓰기</button>`):''}`:`<span class="num none">${x.status==='none'?'공식 청구 팩스번호 안내 없음':'번호 확인 중'} ⚠확인필요</span>`}</div>
+    <div class="x">${x.otherFax?`다른 번호: ${esc(x.otherFax)}<br>`:''}${x.oldFax&&[].concat(x.oldFax).length?`예전 번호: <span class="old">${esc([].concat(x.oldFax).join(', '))}</span><br>`:''}${x.limits?`접수 기준: ${esc(x.limits)}<br>`:''}${x.note?`${esc(x.note)}<br>`:''}${x.form?`<a href="${esc(x.form)}" target="_blank" rel="noopener noreferrer">공식 청구서 양식</a>${src?' · ':''}`:''}${src}${x.checked?` · 확인 ${esc(x.checked)}`:''}</div></div>`;
+}
+function renderDir(){
+  const keepQ=document.activeElement&&document.activeElement.id==='dirQ';
+  const groups=['전체',...new Set(DIR.map(x=>x.group))];
+  if(!$('#dirQ')){
+    $('#dirBody').innerHTML=`<div class="dir-tools"><input type="text" id="dirQ" placeholder="보험사 이름 검색" aria-label="보험사 검색"></div>
+      <div class="dir-tabs" id="dirTabs"></div><div id="dirList"></div>
+      <p class="dir-foot">번호는 각 보험사 홈페이지의 보험금 청구 안내를 기준으로 정리했어요${window.FAX_DIR&&window.FAX_DIR.updated?` (${esc(window.FAX_DIR.updated)} 확인)`:''}. 보험사가 번호를 바꿀 수 있으니 <b>처음 보내는 곳은 콜센터나 공식 안내로 한 번 더 확인</b>해 주세요. <b>공식 확인</b> 번호만 앱에 기본으로 들어갑니다. 의료기록이 담긴 서류라 잘못된 번호로 보내지 않도록 주의해 주세요.</p>`;
+  }
+  $('#dirTabs').innerHTML=groups.map(g=>`<button data-dg="${esc(g)}" class="${g===dirUI.g?'on':''}">${esc(g)}</button>`).join('');
+  const rows=dirRows();
+  $('#dirList').innerHTML=DIR.length?(rows.length?rows.map(dirRowHTML).join(''):'<p class="hint">검색 결과가 없어요.</p>'):'<p class="hint">팩스번호 안내 자료(data/fax-directory.js)를 불러오지 못했어요. 인터넷에 연결한 뒤 다시 열어주세요.</p>';
+  if(keepQ) $('#dirQ').focus();
+}
+$('#dirOv').addEventListener('input',e=>{ if(e.target.id==='dirQ'){ dirUI.q=e.target.value; renderDir() } });
+$('#dirOv').addEventListener('click',e=>{
+  const t=e.target;
+  if(t.id==='dirClose') return closeDir();
+  if(t.dataset.dg){ dirUI.g=t.dataset.dg; renderDir() }
+  if(t.dataset.dcopy){ navigator.clipboard?.writeText(onlyDigits(t.dataset.dcopy)).then(()=>{ t.textContent='복사됨'; setTimeout(()=>t.textContent='복사',1200) }).catch(()=>{}) }
+  if(t.dataset.duse){ const x=dirOf(t.dataset.duse); if(x&&x.fax){ setFax(x.name,x.fax); renderFax(); renderDir(); toast(`${x.name} 팩스번호 ${x.fax} 저장`) } }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('#dirOv').hidden) closeDir() });
+$('#btnDir').addEventListener('click',openDir);
+$('#btnDir2').addEventListener('click',openDir);
+
+// ======================================================================
+//  전체 팩스 준비 — 보험사마다 따로 1개씩 (다른 보험사 청구서가 섞여 나가지 않게)
+// ======================================================================
+$('#btnFaxAll').addEventListener('click',()=>{
+  const list=[...selected];
+  if(!list.length) return toast('6번에서 청구할 보험사를 먼저 고르세요.',true);
+  const rows=list.map(ins=>{ const S=sp(ins), s=signState(ins), why=[];
+    if(S.src==='esign'&&!s.ok) why.push(s.why); if(S.src==='scan'&&!S.scans.length) why.push('종이 서명본 사진 없음');
+    if(!validFax(fax[ins])) why.push('팩스번호 ⚠확인필요');
+    return {ins,why}; });
+  const ok=rows.filter(r=>!r.why.length);
+  moOpen(`<h3>전체 팩스 준비</h3>
+    <p class="lead">보험사마다 <b>따로</b> 팩스용 PDF를 만들어요(청구서 + 동의서 + 첨부 ${atts.length}건). 다른 보험사 청구서가 섞여 나가지 않게 한 파일로 합치지 않습니다.</p>
+    <div class="clist">${rows.map(r=>`<div class="crow" style="cursor:default"><div><b>${esc(r.ins)}</b><small>${r.why.length?`<span class="warn">${esc(r.why.join(' · '))}</span>`:`팩스 ${esc(fax[r.ins])} · ${signState(r.ins).ok?'서명 완료':'종이 서명본'}`}</small></div><span class="chip ${r.why.length?'bad':'ok'}">${r.why.length?'준비 안 됨':'준비됨'}</span></div>`).join('')}</div>
+    ${ok.length?`<label class="sp-ok"><input type="checkbox" id="allOk"> 위 ${ok.length}곳의 받는 곳·팩스번호·고객 서명이 맞는지 확인했습니다</label>`:'<p class="warn">준비된 보험사가 없어요. 위 내용을 먼저 채워주세요.</p>'}
+    <p class="mo-err" id="allErr"></p>
+    <div class="mo-acts"><button id="allNo">닫기</button>${ok.length?`<button class="blue" id="allGo">${ok.length}곳 팩스 PDF 만들기</button>`:''}</div>`);
+  $('#allNo').onclick=moClose;
+  const go=$('#allGo'); if(go) go.onclick=async()=>{
+    if(!$('#allOk').checked) return $('#allErr').textContent='확인 칸에 체크해 주세요.';
+    if(atts.some(a=>a.busy)) return $('#allErr').textContent='첨부 사진 정리 중이에요. 잠시 후 다시 눌러주세요.';
+    go.disabled=true; go.textContent='만드는 중…';
+    for(const r of ok){ const S=sp(r.ins); S.confirm=true; S.open=true; }
+    render();
+    for(const r of ok){ await buildFax(r.ins) }
+    moClose(); render();
+    const done=ok.filter(r=>sp(r.ins).file).length;
+    toast(done===ok.length?`${done}곳 팩스용 PDF 준비 완료 — 보험사마다 [모바일팩스 열기]로 보내세요.`:`${done}/${ok.length}곳만 준비됐어요. 보험사별 안내를 확인하세요.`,done!==ok.length);
+    const first=document.querySelector('.sendbar'); first&&first.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+});
+
 // 시작: 맥미니 서버로 열렸는지 확인
 $('#w_date').value=todayStr();
+$('#bankList').innerHTML=BANKS.map(b=>`<option value="${b}">`).join('');
 renderInsList(); renderFax(); renderAtts(); render(); custUI();
 detectServer();
+bootReply();
+setInterval(refreshReqHash,1500);
 { const r=document.querySelector(`input[name="mfaxApp"][value="${mfaxPkg}"]`); if(r) r.checked=true; }
 $('#mfaxApp').addEventListener('change',e=>{ if(!MFAX_APPS[e.target.value]) return; mfaxPkg=e.target.value; try{ localStorage.setItem('claimMfaxPkg',mfaxPkg) }catch(_){} Object.keys(SP).forEach(refreshSP); });
 
@@ -1438,6 +1851,7 @@ document.querySelector('.bnav').addEventListener('click',e=>{
   if(go==='top') window.scrollTo({top:0,behavior:'smooth'});
   if(go==='sign') $('#signBox').closest('.sec').scrollIntoView({behavior:'smooth',block:'start'});
   if(go==='preview') $('#preview').scrollIntoView({behavior:'smooth',block:'start'});
+  if(go==='dir') openDir();
 });
 // 앱 설치 (안드로이드 크롬)
 let installEvt=null;

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>보험금 청구 서명</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1b2a4e">
+<link rel="icon" type="image/png" href="../icons/icon-v2-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 고객이 카톡 링크로 여는 서명 화면 — 한 화면에 한 가지씩, 큰 글씨 */
+:root{
+  --ink:#16213a; --sub:#5b6680; --line:#d5dbe7; --bg:#f4f6fa; --navy:#1b2a4e; --accent:#e8a33d; --hl:#1f4fd6; --hl-bg:#eef3ff;
+  --warn:#b4261a; --good:#1d7a46; --good-bg:#e4f4ea;
+  --font:'Noto Sans KR','Noto Sans CJK KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:16px;line-height:1.55}
+.top{background:var(--navy);color:#fff;padding:14px 18px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.top b{font-size:18px;font-weight:900}
+.top small{display:block;font-size:12.5px;opacity:.8;margin-top:2px}
+.steps{display:flex;gap:5px;margin-top:10px}
+.steps span{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.25)}
+.steps span.on{background:var(--accent)}
+main{max-width:640px;margin:0 auto;padding:18px 16px calc(110px + env(safe-area-inset-bottom,0px))}
+h1{font-size:21px;font-weight:900;margin:4px 0 8px;line-height:1.4}
+.lead{color:var(--sub);font-size:15px;margin:0 0 14px}
+.sum{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;font-size:15.5px}
+.sum th,.sum td{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.sum tr:last-child th,.sum tr:last-child td{border-bottom:0}
+.sum th{width:34%;color:var(--sub);font-weight:700;background:#fafbfd}
+.notice{font-size:14px;line-height:1.65;background:#fff8ea;border:1px solid #f1d9a8;border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.cg{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:12px}
+.cg h2{margin:0 0 4px;font-size:16px;font-weight:900}
+.cg .gd{font-size:13.5px;color:var(--sub);margin:0 0 6px}
+.ci{padding:11px 0;border-top:1px solid #edf0f5}
+.ci .lab{font-size:16px;font-weight:700}
+.ci .lab small{display:block;font-size:13px;color:var(--sub);font-weight:500;margin-top:2px}
+.tog{display:flex;gap:8px;margin-top:9px}
+button{font-family:var(--font);font-weight:700;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
+.tog button{flex:1;font-size:15px;padding:11px 6px}
+.tog button.y.on{background:var(--hl);border-color:var(--hl);color:#fff}
+.tog button.n.on{background:#5b6680;border-color:#5b6680;color:#fff}
+.all{width:100%;font-size:16px;padding:14px;margin-bottom:12px;background:var(--hl);border-color:var(--hl);color:#fff}
+.docbtn{width:100%;font-size:14.5px;padding:11px;margin-bottom:12px}
+.docs img{width:100%;border:1px solid var(--line);border-radius:8px;margin-bottom:10px;background:#fff}
+.pad{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}
+.pad .who{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;margin-bottom:8px}
+.pad .who button{font-size:13.5px;padding:7px 12px}
+.pad canvas{display:block;width:100%;height:230px;border:2px dashed #b8c2d6;border-radius:12px;background:#fff;touch-action:none}
+.tip{font-size:13px;color:var(--sub);margin-top:7px}
+.err{color:var(--warn);font-weight:700;font-size:14.5px;min-height:1.3em;margin:10px 0 0}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px}
+.foot button{flex:1;font-size:16px;padding:14px 8px}
+.foot .go{flex:2;background:var(--accent);border-color:var(--accent);color:#1b1205}
+.done{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+.done .big{font-size:20px;font-weight:900;color:var(--good);margin:6px 0}
+.done textarea{width:100%;height:110px;font-family:var(--font);font-size:12.5px;border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:10px;color:var(--sub)}
+.done button{font-size:16px;padding:13px;width:100%;margin-top:10px}
+.done .go{background:var(--accent);border-color:var(--accent);color:#1b1205}
+.priv{font-size:12.5px;color:var(--sub);line-height:1.6;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="top"><b>보험금 청구 서명</b><small id="topSub">담당 설계사가 보낸 서명 요청입니다</small><div class="steps" id="steps"><span></span><span></span><span></span></div></div>
+<main id="main"></main>
+<div class="foot" id="foot"><button id="back">이전</button><button class="go" id="next">다음</button></div>
+
+<script src="../js/sigcodec.js"></script>
+<script>
+(function(){
+'use strict';
+const SAMSUNG = {"ui":[{"key":"collect","title":"[필수] 수집·이용에 관한 사항","page":"2쪽","items":[{"k":"uid","label":"고유식별정보 수집·이용","desc":"주민등록번호, 외국인등록번호, 여권번호, 운전면허번호"},{"k":"sens","label":"민감정보 수집·이용","desc":"피보험자의 질병·상해에 관한 정보(진료기록, 상병명 등), 보험사고 조사 및 손해사정 업무 관련 정보"},{"k":"credit","label":"개인(신용)정보 수집·이용","desc":"성명, 주소, 직업, 연락처 등 일반개인정보 · 보험금 지급계좌, 보험계약·보험금 정보"}]},{"key":"provide","title":"[필수] 제공에 관한 사항","page":"3~4쪽","items":[{"k":"uid","label":"고유식별정보 제공 (국내)","desc":"주민등록번호, 외국인등록번호, 여권번호, 운전면허번호"},{"k":"sens","label":"민감정보 제공 (국내)","desc":"질병·상해에 관한 정보, 보험사고 조사 및 손해사정 관련 정보"},{"k":"credit","label":"개인(신용)정보 제공 (국내)","desc":"일반개인정보, 신용거래정보"},{"k":"abroad","label":"개인(신용)정보 제공 (국외)","desc":"국외 재보험사 등 (동의서 4쪽 참고)"}]},{"key":"inquire","title":"[필수] 조회에 관한 사항","page":"4~5쪽","items":[{"k":"uid","label":"고유식별정보 조회","desc":"운전면허번호"},{"k":"sens","label":"민감정보 조회","desc":"질병·상해에 관한 정보, 교통법규 위반정보, 교통사고조사기록"},{"k":"credit","label":"개인(신용)정보 조회","desc":"일반개인정보, 신용거래정보"}]}],"opt":{"key":"optional","title":"[선택] 의료기관 진료비 이상여부 확인을 위한 정보 제공","page":"6쪽","desc":"제공받는 자: 피보험자가 진료받은 의료기관 · 이용목적: 진료유무 및 진료비 산정방식 이상여부 상호확인 · 보유기간: 동의일로부터 3년. 거부하시더라도 보험금 지급에 영향을 미치지 않습니다.","items":[{"k":"sens","label":"민감정보 제공","desc":"진료기간"},{"k":"credit","label":"개인(신용)정보 제공","desc":"성명, 생년월일"}]},"notice":"귀하는 개인(신용)정보의 수집·이용 및 조회, 제공에 관한 동의를 거부하실 수 있습니다. 다만, 본 동의는 ‘보험금 청구’를 위해 필수적인 사항이므로 동의를 거부하시는 경우 관련 업무수행이 불가능합니다."};
+const GENERIC = {ui:[
+  {key:'collect', title:'[필수] 개인(신용)정보 수집·이용', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 수집·이용', desc:'고유식별정보, 민감정보(질병·상해 정보), 개인(신용)정보'}]},
+  {key:'provide', title:'[필수] 개인(신용)정보 제공', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 제공', desc:'보험사 업무수탁자, 손해사정·의료자문 기관 등'}]},
+  {key:'inquire', title:'[필수] 개인(신용)정보 조회', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 조회', desc:'신용정보집중기관, 보험요율산출기관 등'}]}
+], opt:null, notice:'보험금 청구 심사·지급을 위한 동의입니다. 동의를 거부하실 수 있으나, 필수 항목에 동의하지 않으시면 보험금 청구 업무가 불가능할 수 있습니다. 세부 내용은 각 보험사 동의서 양식을 따릅니다.'};
+const VALID_HOURS = 24;
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mask = n=>{ n=(n||'').trim(); return n.length<=1?n:n.length===2?n[0]+'*':n[0]+'*'.repeat(n.length-2)+n.slice(-1) };
+let R=null, C=null, step=1, showDocs=false, docs=null, pads=[];
+
+function fail(msg){ $('#main').innerHTML=`<h1>서명 화면을 열 수 없어요</h1><p class="lead">${esc(msg)}</p><p class="lead">담당 설계사에게 서명 요청을 다시 보내 달라고 해주세요.</p>`; $('#foot').hidden=true; $('#steps').hidden=true }
+
+// ---------- 서명 칸 (획 기록)
+function Pad(cv){
+  const c=cv.getContext('2d'); let strokes=[], cur=null, w=0, h=0;
+  function fit(){ const r=cv.getBoundingClientRect(), d=Math.max(1,window.devicePixelRatio||1); w=r.width; h=r.height; cv.width=Math.round(w*d); cv.height=Math.round(h*d);
+    c.setTransform(d,0,0,d,0,0); c.lineCap='round'; c.lineJoin='round'; c.lineWidth=2.8; c.strokeStyle='#111'; c.fillStyle='#111'; strokes=[]; }
+  const P=e=>{ const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top] };
+  cv.addEventListener('pointerdown',e=>{ e.preventDefault(); try{cv.setPointerCapture(e.pointerId)}catch(_){} cur=[P(e)]; strokes.push(cur); c.beginPath(); c.arc(cur[0][0],cur[0][1],1.4,0,7); c.fill(); $('#err').textContent=''; });
+  cv.addEventListener('pointermove',e=>{ if(!cur) return; e.preventDefault(); const p=P(e), q=cur[cur.length-1]; c.beginPath(); c.moveTo(q[0],q[1]); c.lineTo(p[0],p[1]); c.stroke(); cur.push(p); });
+  const up=()=>{ cur=null }; cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+  fit();
+  return { cv, clear(){ c.save(); c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,cv.width,cv.height); c.restore(); strokes=[] },
+           empty(){ return strokes.reduce((n,s)=>n+s.length,0)<12 }, data(){ return SigCodec.encodeStrokes(strokes,w,h) }, refit: fit, width:()=>w };
+}
+
+// ---------- 화면
+function render(){
+  [...$('#steps').children].forEach((s,i)=>s.classList.toggle('on',i<step));
+  const m=$('#main'), S=R.s||{}; $('#err')&&($('#err').textContent='');
+  $('#back').hidden=step===1; $('#back').textContent='이전';
+  if(step===1){
+    m.innerHTML=`<h1>${esc(mask(R.n))} 고객님,<br>청구 내용을 확인해 주세요</h1>
+      <p class="lead">담당 설계사가 아래 내용으로 보험금 청구서를 준비했어요.</p>
+      <table class="sum">
+        <tr><th>청구 보험사</th><td>${esc((R.ins||[]).join(', '))}</td></tr>
+        <tr><th>사고(발병)일</th><td>${esc(S.date||'-')}${S.atype?' · '+esc(S.atype):''}</td></tr>
+        ${S.hosp||S.dx?`<tr><th>병원 · 진단명</th><td>${esc(S.hosp||'')}${S.dx?'<br>'+esc(S.dx):''}</td></tr>`:''}
+        ${S.lb?`<tr><th>배상책임</th><td>피해자 ${esc(S.lb.v||'-')}${S.lb.d?'<br>'+esc(S.lb.d):''}</td></tr>`:''}
+        ${S.cov&&S.cov.length?`<tr><th>청구 담보</th><td>${esc(S.cov.join(', '))}</td></tr>`:''}
+        <tr><th>받으실 계좌</th><td>${esc(S.acct||'-')}</td></tr>
+        <tr><th>서명하실 분</th><td>${esc(R.role)} ${esc(mask(R.who))}</td></tr>
+      </table>
+      <p class="priv">내용이 다르면 서명하지 마시고 담당 설계사에게 알려주세요.</p>`;
+    $('#next').textContent='내용이 맞아요';
+  }
+  if(step===2){
+    const U=R.f==='samsung'?SAMSUNG:GENERIC;
+    const grp=g=>`<div class="cg"><h2>${esc(g.title)}</h2>${g.desc?`<p class="gd">${esc(g.desc)}</p>`:''}${g.items.map(it=>{ const v=C[g.key][it.k];
+      return `<div class="ci"><div class="lab">${esc(it.label)}${it.desc?`<small>${esc(it.desc)}</small>`:''}</div>
+      <div class="tog"><button class="y ${v===true?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="1" aria-pressed="${v===true}">동의함</button><button class="n ${v===false?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="0" aria-pressed="${v===false}">동의하지 않음</button></div></div>` }).join('')}</div>`;
+    m.innerHTML=`<h1>개인(신용)정보 동의를<br>골라 주세요</h1>
+      <div class="notice">${esc(U.notice)}</div>
+      ${R.f==='samsung'?`<button class="docbtn" id="docBtn">${showDocs?'동의서 전문 닫기':'동의서 전문 보기 (삼성화재 2~6쪽)'}</button>${showDocs?`<div class="docs">${docs?docs.map((s,i)=>`<img src="${s}" alt="동의서 ${i+2}쪽">`).join(''):'<p class="lead">불러오는 중…</p>'}</div>`:''}`:''}
+      <button class="all" id="allBtn">[필수] 항목 모두 동의함</button>
+      ${U.ui.map(grp).join('')}
+      ${U.opt?grp(U.opt)+'<p class="priv" style="margin-top:-4px">[선택] 항목은 고르지 않고 넘어가셔도 됩니다.</p>':''}`;
+    $('#next').textContent='다음';
+  }
+  if(step===3){
+    m.innerHTML=`<h1>서명해 주세요</h1>
+      <p class="lead">위 청구 내용과 동의 사항을 확인했고, <b>${esc((R.ins||[]).join(', '))}</b> 보험금 청구서에 이 서명을 쓰는 데 동의합니다.</p>
+      <div class="pad"><div class="who"><span>${esc(R.role)} ${esc(R.who)}</span><button data-clr="0">다시 쓰기</button></div><canvas aria-label="서명 칸"></canvas><div class="tip">손가락으로 칸 안에 서명해 주세요. 폰을 가로로 돌리면 더 편해요.</div></div>
+      ${R.bn?`<div class="pad" style="margin-top:12px"><div class="who"><span>보험수익자 ${esc(R.bn)}</span><button data-clr="1">다시 쓰기</button></div><canvas aria-label="보험수익자 서명 칸"></canvas><div class="tip">보험수익자 본인이 서명해 주세요.</div></div>`:''}`;
+    pads=[...m.querySelectorAll('canvas')].map(Pad);
+    $('#next').textContent='서명 보내기';
+  }
+  if(!$('#err')) m.insertAdjacentHTML('beforeend','<p class="err" id="err" role="alert"></p>');
+  window.scrollTo(0,0);
+}
+async function finish(){
+  const ret={v:1,id:R.id,k:R.k,h:R.h,t:Date.now(),r:R.role,c:C,sg:pads[0].data()};
+  if(pads[1]) ret.sg2=pads[1].data();
+  const url=new URL('../',location.href).href.split('#')[0]+'#s='+await SigCodec.pack(ret);
+  const msg=`[보험금 청구 서명] ${mask(R.n)} 고객님 서명입니다.\n담당 설계사님, 아래 링크를 누르면 청구서에 서명이 들어갑니다.\n${url}`;
+  $('#steps').hidden=true;
+  $('#main').innerHTML=`<div class="done"><div class="big">서명을 마쳤어요</div>
+    <p class="lead" style="margin:0">아래 버튼으로 <b>카카오톡 대화방</b>을 골라 담당 설계사에게 보내주세요.</p>
+    <button class="go" id="share">카톡으로 서명 보내기</button>
+    <button id="copy">복사하기</button>
+    <textarea id="msg" readonly aria-label="보낼 내용">${esc(msg)}</textarea>
+    <p class="err" id="err" role="alert"></p></div>
+    <p class="priv">서명과 동의 내용은 이 화면에서 바로 담당 설계사에게 보내는 메시지 안에만 담겨요. 이 사이트의 서버나 다른 곳에 저장되지 않아요.</p>`;
+  $('#foot').hidden=true;
+  $('#share').onclick=async()=>{
+    if(navigator.share){ try{ await navigator.share({text:msg}); $('#err').style.color='var(--good)'; $('#err').textContent='보냈다면 끝이에요. 이 창은 닫으셔도 돼요.'; return }catch(e){ if(e&&e.name==='AbortError') return } }
+    copy('공유 기능을 쓸 수 없어 복사했어요. 카톡 대화방에 붙여넣어 보내주세요.');
+  };
+  $('#copy').onclick=()=>copy('복사했어요. 카톡 대화방에 붙여넣어 보내주세요.');
+  function copy(note){ const done=()=>{ $('#err').style.color='var(--good)'; $('#err').textContent=note };
+    if(navigator.clipboard) navigator.clipboard.writeText(msg).then(done,()=>{ $('#msg').select(); document.execCommand('copy'); done() });
+    else { $('#msg').select(); document.execCommand('copy'); done() } }
+}
+
+document.addEventListener('click',async e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.g){ C[t.dataset.g][t.dataset.k]=t.dataset.v==='1'; const y=window.scrollY; render(); window.scrollTo(0,y) }
+  if(t.id==='allBtn'){ const U=R.f==='samsung'?SAMSUNG:GENERIC; U.ui.forEach(g=>g.items.forEach(i=>C[g.key][i.k]=true)); const y=window.scrollY; render(); window.scrollTo(0,y) }
+  if(t.dataset&&t.dataset.clr!==undefined) pads[+t.dataset.clr]&&pads[+t.dataset.clr].clear();
+  if(t.id==='docBtn'){ showDocs=!showDocs; const y=window.scrollY; render(); window.scrollTo(0,y);
+    if(showDocs&&!docs){ const s=document.createElement('script'); s.src='../forms/samsung-fire.js'; s.onload=()=>{ docs=(window.CLAIM_FORMS&&window.CLAIM_FORMS['삼성화재']||{}).docs||[]; if(showDocs){ const y2=window.scrollY; render(); window.scrollTo(0,y2) } }; document.head.appendChild(s) } }
+});
+$('#back').onclick=()=>{ if(step>1){ step--; render() } };
+$('#next').onclick=()=>{
+  if(step===2){ const U=R.f==='samsung'?SAMSUNG:GENERIC; const open=U.ui.flatMap(g=>g.items.filter(i=>C[g.key][i.k]===null));
+    if(open.length){ $('#err').textContent=`[필수] 항목 ${open.length}개를 아직 고르지 않으셨어요.`; return } }
+  if(step===3){ const e=pads.findIndex(p=>p.empty()); if(e>=0){ $('#err').textContent=e?'보험수익자 서명 칸에 서명해 주세요.':'서명 칸에 서명해 주세요.'; return } return finish() }
+  step++; render();
+};
+window.addEventListener('resize',()=>{ if(step!==3) return; pads.forEach(p=>{ if(Math.abs(p.width()-p.cv.getBoundingClientRect().width)>2){ p.refit(); $('#err').textContent='화면 크기가 바뀌어 서명 칸을 비웠어요. 다시 서명해 주세요.' } }) });
+
+(async()=>{
+  let m=location.hash.match(/^#r=([A-Za-z0-9_-]+)/), code=m&&m[1];
+  if(code){ try{ sessionStorage.setItem('claimSignReq',code) }catch(_){} }
+  else { try{ code=sessionStorage.getItem('claimSignReq') }catch(_){} }
+  if(!code) return fail('서명 요청 정보가 없는 주소예요.');
+  try{ R=await SigCodec.unpack(code) }catch(e){ return fail('주소가 잘렸거나 올바르지 않아요. 카톡 메시지의 링크 전체를 눌러 주세요.') }
+  if(!R||R.v!==1||!R.h||!R.id) return fail('주소가 올바르지 않아요.');
+  if(Date.now()-R.t>VALID_HOURS*3600e3) return fail(`서명 요청 링크는 ${VALID_HOURS}시간 동안만 쓸 수 있어요.`);
+  history.replaceState(null,'',location.pathname);   // 주소창·방문기록에 청구 내용이 남지 않게
+  const U=R.f==='samsung'?SAMSUNG:GENERIC; C={};
+  U.ui.forEach(g=>{ C[g.key]={}; g.items.forEach(i=>C[g.key][i.k]=null) }); C.optional={}; if(U.opt) U.opt.items.forEach(i=>C.optional[i.k]=null);
+  $('#topSub').textContent=`담당 설계사가 보낸 서명 요청 · ${VALID_HOURS}시간 동안 유효`;
+  render();
+})();
+})();
+</script>
+</body>
+</html>
