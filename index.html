@@ -390,6 +390,7 @@ table.f td{font-size:9.4pt}
     <div class="row top"><span class="lb">안내방법</span>
       <div class="pills" id="notice">
         <label><input type="checkbox" value="문자메시지" checked>문자메시지</label>
+        <label><input type="checkbox" value="알림톡">알림톡</label>
         <label><input type="checkbox" value="e-mail">e-mail</label>
         <label><input type="checkbox" value="팩스">팩스</label>
         <label><input type="checkbox" value="유선(전화)">유선(전화)</label>
@@ -623,12 +624,18 @@ function hhmm(t){ return `${String(t.getHours()).padStart(2,'0')}:${String(t.get
 //  입력값
 // ======================================================================
 function val(id){ const el=document.getElementById(id); return el?el.value.trim():'' }
+const TEL_PREFIX='010-';
+function telVal(id){ const v=val(id); return /^0\d{0,2}-?$/.test(v)?'':v }   // '010-'만 있으면 입력 안 한 것으로
+// 공식 양식에 쓸 값: 양식에 없는 안내방법(알림톡)은 기재란에 적는다
+function formData(ins){ const d=collect(), F=window.CLAIM_FORMS&&window.CLAIM_FORMS[ins];
+  if(F&&d.notice.includes('알림톡')) d.noticeDetail=['카카오 알림톡',d.noticeDetail].filter(Boolean).join(' / ');
+  return d; }
 function radio(n){ const el=document.querySelector(`input[name="${n}"]:checked`); return el?el.value:'' }
 function checks(id){ return [...document.querySelectorAll(`#${id} input:checked`)].map(i=>i.value) }
 function collect(){
   const same=$('#same').checked, minor=$('#minor').checked, autopay=$('#autopay').checked;
-  const insured={name:val('p_name'),rrn:val('p_rrn'),tel:val('p_tel'),job:val('p_job'),addr:val('p_addr'),email:val('p_mail')};
-  const holder={name:val('c_name'),rrn:val('c_rrn'),tel:val('c_tel')};
+  const insured={name:val('p_name'),rrn:val('p_rrn'),tel:telVal('p_tel'),job:val('p_job'),addr:val('p_addr'),email:val('p_mail')};
+  const holder={name:val('c_name'),rrn:val('c_rrn'),tel:telVal('c_tel')};
   if(same){ insured.name=holder.name; insured.rrn=holder.rrn; insured.tel=holder.tel; }
   const recv=radio('recv'), r=recv==='계약자'?holder:insured, notice=checks('notice');
   const det=[]; if(notice.includes('e-mail')&&insured.email) det.push(insured.email); if(notice.includes('우편')&&insured.addr) det.push(insured.addr);
@@ -651,6 +658,7 @@ function missing(d,ins){
   else { if(!d.dx) m.push('진단명'); if(FORM_FILES[ins]&&!d.medicaid) m.push('의료급여 수급권자 여부'); }
   if(d.minor&&!d.guardian) m.push('법정대리인 이름');
   if(!d.notice.length) m.push('안내방법');
+  else if(FORM_FILES[ins]&&d.notice.every(n=>n==='알림톡')) m.push('안내방법 1개 더(공식 양식엔 알림톡 칸이 없어 기재란에만 적힘)');
   return m;
 }
 
@@ -774,7 +782,7 @@ async function drawOfficial(el){
     const cv=el.querySelector('canvas'), cx=cv.getContext('2d'), k=cv.width/F.size[0];
     const sv=signState(ins);
     cx.drawImage(img,0,0,cv.width,cv.height);
-    const cut=drawOps(cx,F.fill(collect(),{sign:sv.ok?esign:null})[0]||[],k);
+    const cut=drawOps(cx,F.fill(formData(ins),{sign:sv.ok?esign:null})[0]||[],k);
     msg.innerHTML=`${esc(F.version)} · ${sv.ok?'<b style="color:var(--good)">전자서명 반영됨 (동의 체크는 2·4·5쪽)</b>':esc(F.signGuide)}`+(cut.length?`<br><span class="warn">⚠ 글자가 길어 잘린 칸: ${esc(cut.join(', '))}</span>`:'');
   }catch(e){ msg.innerHTML=`<span class="warn">${esc(e.message)}</span>` }
 }
@@ -819,7 +827,7 @@ function liabSheet(ins,opt={}){
     <tr><th>연락처</th><td>${V(d.insured.tel)}</td><th>증권번호</th><td>${V(d.liab.policy)}</td></tr>
     <tr><th>주소</th><td colspan="3">${V(d.insured.addr)}</td></tr>
     <tr><th>계약자</th><th>성명</th><td>${V(d.holder.name)}</td><th>주민번호</th><td>${V(d.holder.rrn)}</td></tr>
-    <tr><th>보상안내</th><th>수령인</th><td>${V(d.recvName)} ${V(d.recvTel)}</td><th>안내방법</th><td>${box(d.notice,['문자메시지','e-mail','팩스','유선(전화)','우편'])}${d.noticeDetail?'<br>'+V(d.noticeDetail):''}</td></tr>
+    <tr><th>보상안내</th><th>수령인</th><td>${V(d.recvName)} ${V(d.recvTel)}</td><th>안내방법</th><td>${box(d.notice,['문자메시지','알림톡','e-mail','팩스','유선(전화)','우편'])}${d.noticeDetail?'<br>'+V(d.noticeDetail):''}</td></tr>
   </table>
   <div class="sh-h3">2. 피해자</div>
   <table class="f">${C4}<tr><th>성명</th><td>${V(d.liab.vname)}</td><th>연락처</th><td>${V(d.liab.vtel)}</td></tr></table>
@@ -858,7 +866,7 @@ function sheet(ins,opt={}){
     <tr><th>직장명/하시는 일</th><td>${V(d.insured.job)}</td><th>의료급여 수급권자</th><td>${box([d.medicaid],['예','아니요'])}</td></tr>
     <tr><th>주소</th><td colspan="3">${V(d.insured.addr)}</td></tr>
     <tr><th>계약자</th><th>성명</th><td>${V(d.holder.name)}</td><th>주민번호</th><td>${V(d.holder.rrn)}</td></tr>
-    <tr><th>보상안내</th><th>수령인</th><td>${V(d.recvName)} ${V(d.recvTel)}</td><th>안내방법</th><td>${box(d.notice,['문자메시지','e-mail','팩스','유선(전화)','우편'])}${d.noticeDetail?'<br>'+V(d.noticeDetail):''}</td></tr>
+    <tr><th>보상안내</th><th>수령인</th><td>${V(d.recvName)} ${V(d.recvTel)}</td><th>안내방법</th><td>${box(d.notice,['문자메시지','알림톡','e-mail','팩스','유선(전화)','우편'])}${d.noticeDetail?'<br>'+V(d.noticeDetail):''}</td></tr>
   </table>
   <div class="sh-h3">2. 다른 보험회사 가입사항 <span style="font-weight:400;font-size:8pt">(손해·생명·공제 포함)</span></div>
   <table class="f"><colgroup><col style="width:15%"><col></colgroup>
@@ -1285,7 +1293,7 @@ async function faxImage(a){
 async function appendClaim(doc,ins,mode,notes,sign){
   const F=await loadForm(ins);
   if(F){
-    const src=await PDFLib.PDFDocument.load(F.bytes), idx=mode==='print'?F.printPages:F.faxPages, ops=F.fill(collect(),{sign});
+    const src=await PDFLib.PDFDocument.load(F.bytes), idx=mode==='print'?F.printPages:F.faxPages, ops=F.fill(formData(ins),{sign});
     const pages=await doc.copyPages(src,idx);
     for(let i=0;i<pages.length;i++){
       const pg=doc.addPage(pages[i]), o=ops[idx[i]];
@@ -1465,7 +1473,7 @@ function resetForm(){
   document.querySelector('#notice input[value="문자메시지"]').checked=true;
   document.querySelector('input[name="atype"][value="상해"]').checked=true;
   $('#same').checked=true; $('#minor').checked=false; $('#autopay').checked=false;
-  $('#w_date').value=todayStr();
+  $('#w_date').value=todayStr(); $('#c_tel').value=TEL_PREFIX;
   atts.splice(0).forEach(a=>a.url&&URL.revokeObjectURL(a.url)); renderAtts();
   esign=null;
   Object.keys(SP).forEach(k=>{ clearInterval(SP[k].timer); SP[k].scans.forEach(a=>a.url&&URL.revokeObjectURL(a.url)); delete SP[k] });
@@ -1557,7 +1565,7 @@ async function unlock(create){
 let keepRrnBack=true;
 try{ keepRrnBack=localStorage.getItem('claimKeepRrn')!=='0' }catch(e){}
 function readCust(){
-  const f={}; CUST_FIELDS.forEach(k=>f[k]=val(k));
+  const f={}; CUST_FIELDS.forEach(k=>f[k]=/_tel$/.test(k)?telVal(k):val(k));
   if(!keepRrnBack){ ['c_rrn','p_rrn'].forEach(k=>{ const d=onlyDigits(f[k]); f[k]=d?d.slice(0,6)+'-':'' }) }
   f.same=$('#same').checked; f.minor=$('#minor').checked; f.autopay=$('#autopay').checked; f.medicaid=radio('medicaid'); f.recv=radio('recv'); f.notice=checks('notice');
   return {f, ins:[...selected]};
@@ -1571,7 +1579,7 @@ function custSub(r){
 }
 function applyCust(r){
   resetForm();
-  const f=r.f; CUST_FIELDS.forEach(k=>{ const el=document.getElementById(k); if(el) el.value=f[k]||'' });
+  const f=r.f; CUST_FIELDS.forEach(k=>{ const el=document.getElementById(k); if(el) el.value=f[k]||(k==='c_tel'?TEL_PREFIX:'') });
   $('#same').checked=f.same!==false; $('#minor').checked=!!(f.minor||f.p_guard); $('#autopay').checked=!!f.autopay;
   const setR=(n,v)=>{ const el=v&&document.querySelector(`input[name="${n}"][value="${v}"]`); if(el) el.checked=true };
   setR('medicaid',f.medicaid); setR('recv',f.recv||'피보험자');
@@ -1873,7 +1881,7 @@ $('#btnFaxAll').addEventListener('click',()=>{
 });
 
 // 시작: 맥미니 서버로 열렸는지 확인
-$('#w_date').value=todayStr();
+$('#w_date').value=todayStr(); $('#c_tel').value=TEL_PREFIX;
 $('#bankList').innerHTML=BANKS.map(b=>`<option value="${b}">`).join('');
 renderInsList(); renderFax(); renderAtts(); render(); custUI();
 detectServer();
