@@ -289,6 +289,42 @@ table.f td{font-size:9.4pt}
 .hero .acts{display:flex;gap:8px;flex-wrap:wrap}
 .hero .acts button{font-size:14px;padding:10px 16px}
 @media (max-width:520px){.topbar{padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px))}.topbar .btns{gap:6px}.topbar .btns button{font-size:12px;padding:7px 10px}.topbar .note{font-size:11px}}
+/* 오른쪽: 청구할 보험사 · 첨부 · 청구서류 */
+.rcard{width:210mm;max-width:100%;margin:0 auto 14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px}
+.rcard h2{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 10px;font-size:15px;font-weight:900}
+.rcard h2 b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;flex:none}
+.rcard h2 span{font-weight:500;color:var(--sub);font-size:12px}
+.ins-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.ins-tabs button{font-size:12.5px;padding:7px 12px;border-radius:999px}
+.ins-tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.ins-tabs .cnt{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:9px;background:var(--accent);color:#1b1205;font-size:10.5px;margin-left:3px;padding:0 4px}
+.ins-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ins-chip{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;user-select:none}
+.ins-chip input{position:absolute;opacity:0;pointer-events:none}
+.ins-chip .dot{width:8px;height:8px;border-radius:2px;flex:none}
+.ins-chip .badge{margin:0;font-size:10px;padding:0 5px}
+.ins-chip:hover{background:var(--fill)}
+.ins-chip:has(input:checked){background:var(--hl);border-color:var(--hl);color:#fff}
+.ins-chip:has(input:checked) .dot{outline:1.5px solid #fff}
+.ins-chip:has(input:focus-visible){outline:2px solid var(--hl);outline-offset:2px}
+.ins-add{display:flex;gap:6px;margin-bottom:12px}
+.ins-add button{flex:none}
+.picked-h{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.picked-h b{font-size:13.5px}
+.picked-h button{font-size:12px;padding:6px 10px}
+.faxrow{grid-template-columns:1fr 140px 46px 34px}
+.faxrow .rm{padding:5px 0;font-size:12px;color:var(--sub)}
+.mfax-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.mfax-line .lb{font-size:12px;color:var(--sub)}
+.outbar{width:210mm;max-width:100%;margin:4px auto 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.outbar b{font-size:16px;font-weight:900}
+.outbar .acts{display:flex;gap:6px;flex-wrap:wrap}
+.outbar button{font-size:13px;padding:9px 14px}
+.sign-sub{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+.sign-sub .cap{font-size:13.5px;font-weight:900;margin-bottom:8px}
+.sign-sub .cap span{font-size:11.5px;font-weight:500;color:var(--sub);margin-left:4px}
+.hero{margin-top:6px}
+.rfoot{width:210mm;max-width:100%;margin:18px auto 0}
 .site-foot{border-top:1px solid var(--line);margin-top:18px;padding-top:12px;font-size:11.5px;color:var(--sub);line-height:1.7}
 .site-foot b{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
@@ -307,8 +343,6 @@ table.f td{font-size:9.4pt}
     <button class="ghost" id="btnDir">팩스번호 안내</button>
     <button class="ghost" id="btnSample">예시 채우기</button>
     <button class="ghost" id="btnClear">전체 지우기</button>
-    <button class="ghost" id="btnPrintAll">전체 서명용 PDF</button>
-    <button class="primary" id="btnFaxAll">전체 팩스 준비</button>
   </div>
 </div>
 
@@ -435,7 +469,7 @@ table.f td{font-size:9.4pt}
   </div>
 
   <div class="sec">
-    <h2><b>5</b>보험금 받을 계좌 · 작성일</h2>
+    <h2><b>5</b>보험금 계좌 · 작성일 · 서명</h2>
     <label class="chk"><input type="checkbox" id="autopay"> 보험료 자동이체 계좌로 받을게요 (계좌 칸 비움)</label>
     <div class="row"><label for="bank">은행</label><input type="text" id="bank" data-k list="bankList" placeholder="눌러서 고르거나 입력"></div>
     <div class="row"><label for="acct">계좌번호</label><input type="text" id="acct" data-k autocomplete="off" inputmode="numeric"></div>
@@ -443,58 +477,53 @@ table.f td{font-size:9.4pt}
     <div class="row"><label for="w_date">작성일</label><input type="date" id="w_date" data-k></div>
     <datalist id="bankList"></datalist>
     <p class="hint">계좌를 비우면 보험료 납입계좌 또는 최근 지급계좌로 지급될 수 있습니다(삼성화재 양식 안내). 지급 계좌 처리는 보험사 기준을 따릅니다.</p>
+    <div class="sign-sub" id="signSec"><div class="cap">고객 서명 <span>6번에서 청구할 보험사를 고른 뒤</span></div><div class="statebox" id="signBox"></div></div>
   </div>
 
-  <div class="sec">
-    <h2><b>6</b>청구할 보험사 <span>(선택한 곳마다 1부씩)</span></h2>
-    <input type="text" class="ins-search" id="insQ" placeholder="보험사 검색">
-    <div class="ins-list" id="insList"></div>
-    <p class="hint"><span class="badge" style="margin:0">공식양식</span> 표시된 곳은 보험사 공식 청구서에 그대로 찍힙니다. 나머지는 표준 양식으로 작성됩니다. 일상생활배상책임 같은 배상 사고는 아래 <b>배상책임</b> 묶음에서 고르세요.</p>
-    <div class="row" style="margin-top:8px"><label for="addIns">직접 추가</label>
-      <div style="display:flex;gap:6px"><input type="text" id="addIns" placeholder="예) ○○공제"><button id="addInsBtn" style="flex:none">추가</button></div></div>
-  </div>
 
-  <div class="sec">
-    <h2><b>7</b>청구 팩스번호</h2>
-    <p class="hint">입력해두면 이 기기에 저장돼 다음부터 자동으로 뜹니다.<br>
-    <span class="warn">⚠ 보상(청구) 접수 팩스번호를 보험사 공지·콜센터로 확인 후 입력하세요.</span> 가입설계동의·계약 서류 팩스번호와 다를 수 있습니다.</p>
-    <p class="hint">공식 안내로 확인된 번호는 기본으로 들어갑니다. <button id="btnDir2" style="padding:3px 9px;font-size:11.5px">보험사 팩스번호 안내 보기</button></p>
+
+</aside>
+
+<main class="preview" id="preview">
+  <section class="rcard" id="insCard">
+    <h2><b>6</b>청구할 보험사 <span>여러 곳을 고르면 회사별 청구서가 차례로 나와요</span></h2>
+    <div class="ins-tabs" id="insTabs"></div>
+    <input type="text" class="ins-search" id="insQ" placeholder="보험사 이름 검색 (모든 묶음에서 찾기)" aria-label="보험사 검색">
+    <div class="ins-grid" id="insList"></div>
+    <div class="ins-add"><input type="text" id="addIns" placeholder="목록에 없으면 직접 추가 (예: ○○공제)" aria-label="보험사 직접 추가"><button id="addInsBtn">추가</button></div>
+    <div class="picked-h"><b>고른 보험사 · 받는 팩스번호</b><button id="btnDir2">보험사 팩스번호 안내</button></div>
     <div class="faxbox" id="faxBox"></div>
-    <div class="row" style="margin-top:10px"><span class="lb">폰의 모바일팩스 앱</span>
+    <p class="hint"><span class="badge" style="margin:0">공식</span> 표시는 보험사 공식 청구서에 그대로 찍히고, 나머지는 표준 양식으로 작성돼요. 일상생활배상책임 같은 배상 사고는 <b>배상책임</b> 탭에서 고르세요.<br>
+    <span class="warn">⚠ 팩스번호는 보상(청구) 접수 번호인지 확인 후 쓰세요.</span> 가입설계동의·계약 서류 팩스와 다를 수 있어요. 고친 번호는 이 기기에 저장돼 다음부터 자동으로 들어가요.</p>
+    <div class="mfax-line"><span class="lb">폰의 모바일팩스 앱</span>
       <div class="pills" id="mfaxApp">
         <label><input type="radio" name="mfaxApp" value="com.dho.mobilefax">모바일팩스</label>
         <label><input type="radio" name="mfaxApp" value="com.dho.mobilefaxlite">모바일팩스(발신전용)</label>
       </div></div>
-    <p class="hint">[모바일팩스 열기]를 누르면 이 앱이 바로 열립니다. 폰에 깔린 쪽을 고르세요.</p>
-  </div>
+  </section>
 
-  <div class="sec">
-    <h2><b>8</b>첨부 서류 <span>(진단서·영수증·세부내역서)</span></h2>
+  <section class="rcard">
+    <h2><b>7</b>첨부 서류 <span>진단서·영수증·세부내역서</span></h2>
     <label class="drop" for="attIn">＋ 사진 찍기 / 파일 선택 (사진·PDF)
       <input type="file" id="attIn" accept="image/*,application/pdf" multiple></label>
     <div class="att-list" id="attList"></div>
     <p class="hint">팩스에서 청구서·동의서 뒤에 이 순서대로 붙습니다. 사진은 서류 모서리를 찾아 <b>반듯하게 펴고 흑백 선명하게</b> 바꿉니다(폰 안에서 처리). 잘못 잡혔으면 [모서리]로 고치세요.</p>
-  </div>
+  </section>
 
-  <div class="sec">
-    <h2><b>9</b>고객 서명</h2>
-    <div class="statebox" id="signBox"></div>
-  </div>
+  <div class="outbar"><b>청구서류</b><div class="acts"><button id="btnPrintAll">모두 서명용 PDF</button><button class="primary" id="btnFaxAll">전체 팩스 준비</button></div></div>
+  <div id="docs"></div>
 
-  <div class="sec" id="srvSec" hidden>
-    <h2><b>10</b>팩스 자동발송 연결</h2>
+  <section class="rcard" id="srvSec" hidden>
+    <h2><b>8</b>팩스 자동발송 연결</h2>
     <div class="statebox" id="srvBox"></div>
-  </div>
+  </section>
 
-  <footer class="site-foot">
+  <footer class="site-foot rfoot">
     <b>정무경보험대리점</b> · 설계사용 무료 도구<br>
     입력한 고객 정보·서명·첨부는 어떤 서버로도 보내지 않고 이 기기 화면 안에서만 처리합니다. 고객 정보는 [고객 저장]을 누를 때만 PIN으로 암호화해 이 기기에 보관합니다.<br>
     공식 양식과 청구 팩스번호는 각 보험사 공식 안내를 기준으로 하며 바뀔 수 있습니다. 보내기 전에 받는 번호를 한 번 더 확인해 주세요.
   </footer>
-
-</aside>
-
-<main class="preview" id="preview"></main>
+</main>
 </div>
 <div id="offscreen" aria-hidden="true"></div>
 
@@ -568,7 +597,9 @@ try{
 // 저장해 둔 번호가 보험사가 바꾸기 전 옛 번호면 알려준다
 function faxFlag(n){ const x=dirOf(n); if(!x||!fax[n]) return '';
   const cur=onlyDigits(fax[n]), olds=[].concat(x.oldFax||[]).map(onlyDigits).filter(Boolean);
-  if(olds.includes(cur)&&x.fax&&onlyDigits(x.fax)!==cur) return `예전 번호예요 → 공식 안내 ${x.fax}`;
+  if(x.warn&&x.warn[cur]) return x.warn[cur];
+  if((x.status==='verified'||x.status==='changed')&&olds.includes(cur)&&onlyDigits(x.fax)!==cur)
+    return x.fax?`예전 번호예요 → 공식 안내 ${x.fax}`:'공식 안내에 없는 번호예요 → 콜센터에서 건별 팩스번호를 받아야 해요';
   return ''; }
 // SK브로드밴드 모바일팩스 앱 (안드로이드 패키지)
 const MFAX_APPS = {"com.dho.mobilefax":"모바일팩스","com.dho.mobilefaxlite":"모바일팩스(발신전용)"};
@@ -626,20 +657,24 @@ function missing(d,ins){
 // ======================================================================
 //  보험사 · 팩스번호
 // ======================================================================
+let insTab='손해보험';
+const tabName=g=>g.replace(' (손해보험)','');
 function renderInsList(){
-  const q=$('#insQ').value.trim(), groups={...INS}; if(custom.length) groups["직접 추가"]=custom;
-  let h='';
-  for(const [g,arr] of Object.entries(groups)){
-    const f=arr.filter(n=>!q||n.includes(q)); if(!f.length) continue;
-    h+=`<div class="ins-grp">${g}</div>`;
-    f.forEach(n=>{h+=`<label class="ins-item"><input type="checkbox" value="${esc(n)}" ${selected.has(n)?'checked':''}><span class="dot" style="background:${BRAND[baseIns(n)]||'#1b2a4e'}"></span>${esc(n)}${FORM_FILES[n]?'<span class="badge">공식양식</span>':''}</label>`});
-  }
-  $('#insList').innerHTML=h||'<div class="hint" style="padding:6px">검색 결과가 없습니다.</div>';
+  const q=$('#insQ').value.trim().replace(/\s/g,''), groups={...INS}; if(custom.length) groups["직접 추가"]=custom;
+  if(!groups[insTab]) insTab='손해보험';
+  $('#insTabs').innerHTML=Object.entries(groups).map(([g,arr])=>{ const n=arr.filter(x=>selected.has(x)).length;
+    return `<button type="button" data-tab="${esc(g)}" class="${g===insTab&&!q?'on':''}" aria-pressed="${g===insTab&&!q}">${esc(tabName(g))}${n?`<span class="cnt">${n}</span>`:''}</button>` }).join('');
+  const list=q?[...new Set(Object.values(groups).flat())].filter(n=>n.replace(/\s/g,'').includes(q)):groups[insTab];
+  const label=n=>!q&&insTab===INS_LIAB?baseIns(n):n;
+  $('#insList').innerHTML=list.length?list.map(n=>`<label class="ins-chip"><input type="checkbox" value="${esc(n)}" ${selected.has(n)?'checked':''}><span class="dot" style="background:${BRAND[baseIns(n)]||'#1b2a4e'}"></span>${esc(label(n))}${FORM_FILES[n]?'<span class="badge">공식</span>':''}</label>`).join('')
+    :'<div class="hint" style="padding:4px 2px">검색 결과가 없어요. 아래에서 직접 추가할 수 있어요.</div>';
 }
+const INS_LIAB='배상책임 (손해보험)';
+$('#insTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tab]'); if(!b) return; insTab=b.dataset.tab; $('#insQ').value=''; renderInsList(); });
 $('#insList').addEventListener('change',e=>{
   if(e.target.type!=='checkbox') return;
   e.target.checked?selected.add(e.target.value):selected.delete(e.target.value);
-  renderFax(); render();
+  renderInsList(); renderFax(); render();
 });
 $('#insQ').addEventListener('input',renderInsList);
 $('#addInsBtn').addEventListener('click',()=>{
@@ -649,11 +684,11 @@ $('#addInsBtn').addEventListener('click',()=>{
 });
 function renderFax(){
   const list=[...selected];
-  if(!list.length){ $('#faxBox').innerHTML='<div class="hint" style="padding:8px">보험사를 먼저 선택하세요.</div>'; return; }
+  if(!list.length){ $('#faxBox').innerHTML='<div class="hint" style="padding:8px">위에서 청구할 보험사를 고르면 여기에 받는 팩스번호와 함께 나와요.</div>'; return; }
   $('#faxBox').innerHTML=list.map(n=>{ const fl=faxFlag(n), x=dirOf(n);
     return `<div class="faxrow ${validFax(fax[n])?'':'empty'}"><span>${esc(n)}</span>
-    <input type="text" data-fax="${esc(n)}" value="${esc(fax[n]||'')}" placeholder="⚠확인필요" inputmode="tel" aria-label="${esc(n)} 청구 팩스번호"><button data-copy="${esc(n)}">복사</button>
-    ${fl?`<div class="flag">⚠ ${esc(fl)}<button data-usefax="${esc(n)}">새 번호 쓰기</button></div>`:(!validFax(fax[n])&&x&&x.fax&&x.status==='unverified'?`<div class="flag">공식 확인 전 번호 ${esc(x.fax)} — 보험사에 확인 후 입력</div>`:'')}</div>` }).join('');
+    <input type="text" data-fax="${esc(n)}" value="${esc(fax[n]||'')}" placeholder="⚠확인필요" inputmode="tel" aria-label="${esc(n)} 청구 팩스번호"><button data-copy="${esc(n)}">복사</button><button class="rm" data-unpick="${esc(n)}" aria-label="${esc(n)} 빼기" title="빼기">✕</button>
+    ${fl?`<div class="flag">⚠ ${esc(fl)}${x&&x.fax&&/예전 번호/.test(fl)?`<button data-usefax="${esc(n)}">새 번호 쓰기</button>`:''}</div>`:(!validFax(fax[n])&&x&&x.fax&&x.status==='unverified'?`<div class="flag">공식 확인 전 번호 ${esc(x.fax)} — 보험사에 확인 후 입력</div>`:'')}</div>` }).join('');
 }
 function setFax(n,v,from){
   fax[n]=v.trim(); saveFax();
@@ -663,6 +698,7 @@ function setFax(n,v,from){
 }
 $('#faxBox').addEventListener('input',e=>{ const n=e.target.dataset.fax; if(n) setFax(n,e.target.value,e.target) });
 $('#faxBox').addEventListener('click',e=>{
+  const un=e.target.dataset.unpick; if(un){ selected.delete(un); renderInsList(); renderFax(); render(); return }
   const u=e.target.dataset.usefax; if(u){ const x=dirOf(u); if(x&&x.fax){ setFax(u,x.fax); renderFax(); toast(`${u} 팩스번호를 ${x.fax}(으)로 바꿨어요`) } return }
   const n=e.target.dataset.copy; if(!n||!fax[n]) return;
   const done=()=>{e.target.textContent='완료';setTimeout(()=>e.target.textContent='복사',1200)};
@@ -1088,7 +1124,7 @@ function canSend(ins){
   if(['building','sending','tracking','checking'].includes(S.phase)) return {ok:false, why:['발송 진행 중입니다']};
   if(S.phase==='done') return {ok:false, why:[], done:true};
   if(!SV.on) why.push('자동발송 서버에 연결되어 있지 않습니다 (맥미니 서버 주소로 열어주세요)');
-  else if(!SV.ok) why.push('10번에서 접속 비밀번호로 연결하세요');
+  else if(!SV.ok) why.push('8번에서 접속 비밀번호로 연결하세요');
   if(!validFax(fax[ins])) why.push('받는 팩스번호를 확인하세요');
   if(S.src==='esign'){ const s=signState(ins); if(!s.ok) why.push(s.why); }
   else if(!S.scans.length) why.push('종이 서명본 사진을 올려주세요');
@@ -1116,7 +1152,7 @@ function spHTML(ins){
         <label class="opt-line ${S.src==='esign'?'on':''}"><input type="radio" name="src-${esc(ins)}" value="esign" data-src="${esc(ins)}" ${S.src==='esign'?'checked':''}> 전자서명본 ${sigChip} ${s.ok?'':'<button class="sp-sign">고객 서명 받기</button>'}</label>
         <label class="opt-line ${S.src==='scan'?'on':''}"><input type="radio" name="src-${esc(ins)}" value="scan" data-src="${esc(ins)}" ${S.src==='scan'?'checked':''}> 종이 서명본 사진 <input type="file" class="sp-scan" data-ins="${esc(ins)}" accept="image/*,application/pdf" multiple> <span>${S.scans.length?`${S.scans.length}장`:''}</span></label>
       </div>
-      <div class="k">첨부</div><div class="v">${atts.length?`${atts.length}건 (8번 첨부 서류)`:'<span class="warn">없음 — 진단서·영수증을 8번에 올리세요</span>'}${!off?' · <span class="warn">표준 양식: 보험사가 자사 동의서를 따로 요구할 수 있음</span>':''}</div>
+      <div class="k">첨부</div><div class="v">${atts.length?`${atts.length}건 (7번 첨부 서류)`:'<span class="warn">없음 — 진단서·영수증을 7번에 올리세요</span>'}${!off?' · <span class="warn">표준 양식: 보험사가 자사 동의서를 따로 요구할 수 있음</span>':''}</div>
       <div class="k">팩스</div><div class="v">${S.file?`<span class="chip ok">PDF 준비됨 ${S.pages}쪽</span>`:'<span class="chip off">PDF 만들기 전</span>'}${S.sentAt?` <span class="chip ok">보냄 ${hhmm(S.sentAt)}</span>`:''}<span class="hint" style="margin:0;flex-basis:100%">모바일팩스는 쪽마다 MMS 1건으로 나갑니다</span></div>
     </div>
     <label class="sp-ok"><input type="checkbox" class="sp-confirm" data-ins="${esc(ins)}" ${S.confirm?'checked':''}> 받는 곳(${esc(ins)})·팩스번호·고객 서명이 맞는지 확인했습니다</label>
@@ -1157,6 +1193,7 @@ function sendbar(ins){
 }
 const HERO=`<div class="hero">
   <h2>고객 정보 한 번 입력하면<br><em>보험사 청구서가 한 번에</em> 채워집니다</h2>
+  <p class="lead" style="margin-bottom:8px"><b style="color:var(--hl)">↑ 위 6번에서 청구할 보험사를 고르면</b> 여기에 회사별 청구서가 차례로 나와요.</p>
   <p class="lead">설계사가 고객 대신 청구서를 준비하고, 고객은 동의와 서명만. 입력값은 이 기기 밖으로 나가지 않습니다.</p>
   <ol>
     <li><b>고객·사고 정보 입력</b> — [고객 저장]해 두면 다음엔 불러오기 한 번</li>
@@ -1174,7 +1211,7 @@ function render(){
   $('#liabBlock').hidden = ![...selected].some(isLiab);
   { const ap=$('#autopay').checked; ['bank','acct','holder'].forEach(id=>$('#'+id).disabled=ap); }
   renderSignBox();
-  const list=[...selected], pv=$('#preview');
+  const list=[...selected], pv=$('#docs');
   if(!list.length){ pv.innerHTML=HERO; return; }
   pv.innerHTML=list.map(ins=>sendbar(ins)+(FORM_FILES[ins]
     ?`<div class="official" data-ins="${esc(ins)}"><canvas width="1241" height="1754" aria-label="${esc(ins)} 공식 청구서 미리보기"></canvas><p class="o-msg">공식 양식 불러오는 중…</p></div>`
@@ -1295,7 +1332,7 @@ async function buildFax(ins){
   try{
     const r=await buildPdf(ins,'fax');
     S.mphase='idle';
-    if(r.skipped.length) return setSP(ins,`열 수 없는 파일이 있습니다: ${r.skipped.join(', ')} — 8번에서 빼거나 다시 올려주세요.`,'bad');
+    if(r.skipped.length) return setSP(ins,`열 수 없는 파일이 있습니다: ${r.skipped.join(', ')} — 7번에서 빼거나 다시 올려주세요.`,'bad');
     S.file=r.file; S.pages=r.pages; S.builtKey=builtKeyOf(ins); S.sentAt=null;
     setSP(ins,`팩스용 PDF 준비 완료 · ${summary(r,ins)} — [모바일팩스 열기]를 누르세요`);
   }catch(err){ S.mphase='idle'; setSP(ins,'PDF를 만들지 못했습니다: '+err.message,'bad') }
@@ -1318,7 +1355,7 @@ async function autoSend(ins){
   if(!libsOk()) return setSP(ins,'PDF 도구를 불러오지 못했습니다. 새로고침하세요.','bad');
   S.phase='building'; S.receipt=null; S.last=null; setSP(ins,'팩스용 PDF 만드는 중…');
   let r; try{ r=await buildPdf(ins,'fax') }catch(e){ S.phase='failed'; return setSP(ins,'PDF를 만들지 못했습니다: '+e.message,'bad') }
-  if(r.skipped.length){ S.phase='failed'; return setSP(ins,`열 수 없는 파일이 있어 보내지 않았습니다: ${r.skipped.join(', ')} — 8번에서 빼거나 다시 올려주세요.`,'bad') }
+  if(r.skipped.length){ S.phase='failed'; return setSP(ins,`열 수 없는 파일이 있어 보내지 않았습니다: ${r.skipped.join(', ')} — 7번에서 빼거나 다시 올려주세요.`,'bad') }
   S.pages=r.pages; if(!S.rn) S.rn=newRN();
   S.phase='sending'; setSP(ins,`${r.pages}쪽 보내는 중…`);
   const who=collect().insured.name;
@@ -1763,7 +1800,7 @@ window.addEventListener('storage',e=>{ if(e.key!=='claimSignInbox'||!e.newValue)
 // ======================================================================
 //  보험사 청구 팩스번호 안내
 // ======================================================================
-const DIR_ST={verified:['ok','공식 확인'],changed:['mode','번호 바뀜'],unverified:['bad','확인 필요'],none:['off','팩스 접수 안내 없음']};
+const DIR_ST={verified:['ok','공식 확인'],changed:['mode','번호 바뀜'],virtual:['mode','콜센터 건별 발급'],unverified:['bad','확인 필요'],none:['off','팩스 접수 안내 없음']};
 const dirUI={q:'',g:'전체'};
 function openDir(){ $('#dirOv').hidden=false; document.body.classList.add('locked'); renderDir(); setTimeout(()=>$('#dirQ')&&$('#dirQ').focus(),60) }
 function closeDir(){ $('#dirOv').hidden=true; if($('#signOv').hidden&&$('#mo').hidden) document.body.classList.remove('locked') }
@@ -1775,8 +1812,8 @@ function dirRowHTML(x){
   const st=DIR_ST[x.status]||DIR_ST.unverified, mine=fax[x.name], same=mine&&x.fax&&onlyDigits(mine)===onlyDigits(x.fax);
   const src=(x.sources||[]).slice(0,2).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">출처${i+1}</a>`).join(' · ');
   return `<div class="dir-row"><div class="t"><b>${esc(x.name)}</b><span class="chip ${st[0]}">${st[1]}</span>${x.virtual?'<span class="chip off">가상팩스</span>':''}${FORM_FILES[x.name]?'<span class="badge" style="margin:0">공식양식</span>':''}</div>
-    <div class="n">${x.fax?`<span class="num ${x.status==='verified'||x.status==='changed'?'':'unv'}">${esc(x.fax)}${x.status==='verified'||x.status==='changed'?'':' (공식 확인 전)'}</span><button data-dcopy="${esc(x.fax)}">복사</button>${x.status==='verified'||x.status==='changed'?(same?'<span class="chip ok">앱에 들어가 있음</span>':`<button class="blue" data-duse="${esc(x.name)}">이 번호 쓰기</button>`):''}`:`<span class="num none">${x.status==='none'?'공식 청구 팩스번호 안내 없음':'번호 확인 중'} ⚠확인필요</span>`}</div>
-    <div class="x">${x.otherFax?`다른 번호: ${esc(x.otherFax)}<br>`:''}${x.oldFax&&[].concat(x.oldFax).length?`예전 번호: <span class="old">${esc([].concat(x.oldFax).join(', '))}</span><br>`:''}${x.limits?`접수 기준: ${esc(x.limits)}<br>`:''}${x.note?`${esc(x.note)}<br>`:''}${x.form?`<a href="${esc(x.form)}" target="_blank" rel="noopener noreferrer">공식 청구서 양식</a>${src?' · ':''}`:''}${src}${x.checked?` · 확인 ${esc(x.checked)}`:''}</div></div>`;
+    <div class="n">${x.fax?`<span class="num ${x.status==='verified'||x.status==='changed'?'':'unv'}">${esc(x.fax)}${x.status==='verified'||x.status==='changed'?'':' (공식 확인 전)'}</span><button data-dcopy="${esc(x.fax)}">복사</button>${x.status==='verified'||x.status==='changed'?(same?'<span class="chip ok">앱에 들어가 있음</span>':`<button class="blue" data-duse="${esc(x.name)}">이 번호 쓰기</button>`):''}`:(x.status==='virtual'||x.virtual?`<span class="num none" style="color:var(--navy)">콜센터에 전화하면 건별 팩스번호를 문자로 받아요</span>`:`<span class="num none">${x.status==='none'?'공식 청구 팩스번호 안내 없음':'번호 확인 중'} ⚠확인필요</span>`)}</div>
+    <div class="x">${x.otherFax?`다른 번호: ${esc(x.otherFax)}<br>`:''}${x.oldFax&&[].concat(x.oldFax).length?`공식 안내에 없는 옛 번호: <span class="old">${esc(x.oldNote||[].concat(x.oldFax).join(', '))}</span><br>`:''}${x.otherNote?`${esc(x.otherNote)}<br>`:''}${x.limits?`접수 기준: ${esc(x.limits)}<br>`:''}${x.note?`${esc(x.note)}<br>`:''}${x.form?`<a href="${esc(x.form)}" target="_blank" rel="noopener noreferrer">공식 청구서 양식</a>${src?' · ':''}`:''}${src}${x.checked?` · 확인 ${esc(x.checked)}`:''}</div></div>`;
 }
 function renderDir(){
   const keepQ=document.activeElement&&document.activeElement.id==='dirQ';
@@ -1849,7 +1886,7 @@ $('#mfaxApp').addEventListener('change',e=>{ if(!MFAX_APPS[e.target.value]) retu
 document.querySelector('.bnav').addEventListener('click',e=>{
   const go=e.target.dataset.go; if(!go) return;
   if(go==='top') window.scrollTo({top:0,behavior:'smooth'});
-  if(go==='sign') $('#signBox').closest('.sec').scrollIntoView({behavior:'smooth',block:'start'});
+  if(go==='sign') $('#signSec').scrollIntoView({behavior:'smooth',block:'start'});
   if(go==='preview') $('#preview').scrollIntoView({behavior:'smooth',block:'start'});
   if(go==='dir') openDir();
 });
