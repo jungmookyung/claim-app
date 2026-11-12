@@ -403,8 +403,8 @@ table.f td{font-size:9.4pt}
     <h2><b>4</b>사고 · 병원</h2>
     <div class="row"><span class="lb">사고유형</span>
       <div class="pills" id="atype">
-        <label><input type="radio" name="atype" value="질병">질병</label>
-        <label><input type="radio" name="atype" value="상해" checked>상해</label>
+        <label><input type="radio" name="atype" value="질병" checked>질병</label>
+        <label><input type="radio" name="atype" value="상해">상해</label>
         <label><input type="radio" name="atype" value="교통사고">교통사고</label>
       </div></div>
     <div class="row"><span class="lb">청구유형</span>
@@ -1471,7 +1471,7 @@ function resetForm(){
   document.querySelectorAll('.panel .pills input').forEach(i=>{ if(i.name!=='mfaxApp') i.checked=false });
   ['recv','rtype'].forEach(n=>{ const f=document.querySelector(`input[name="${n}"]`); if(f) f.checked=true; });
   document.querySelector('#notice input[value="문자메시지"]').checked=true;
-  document.querySelector('input[name="atype"][value="상해"]').checked=true;
+  document.querySelector('input[name="atype"][value="질병"]').checked=true;
   $('#same').checked=true; $('#minor').checked=false; $('#autopay').checked=false;
   $('#w_date').value=todayStr(); $('#c_tel').value=TEL_PREFIX;
   atts.splice(0).forEach(a=>a.url&&URL.revokeObjectURL(a.url)); renderAtts();
