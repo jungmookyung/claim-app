@@ -1,6 +1,6 @@
 /* 청구서앱 서비스워커 — 앱 파일을 폰에 저장해 두고 인터넷이 없어도 열리게 한다.
    고객 입력값·서명·첨부는 여기서 다루지 않는다(화면 메모리에만 있음). */
-const VER = 'claim-v9-20261112';
+const VER = 'claim-v10-20261112';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './forms/samsung-fire.js', './vendor/pdf-lib.min.js', './vendor/html2canvas.min.js',

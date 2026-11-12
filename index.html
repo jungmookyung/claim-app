@@ -572,7 +572,7 @@ INS["배상책임 (손해보험)"]=INS["손해보험"].map(n=>n+LIAB_SFX);
 const isLiab=n=>String(n).endsWith(LIAB_SFX), baseIns=n=>isLiab(n)?n.slice(0,-LIAB_SFX.length):n;
 const BANKS=['KB국민은행','신한은행','우리은행','하나은행','NH농협은행','지역농·축협','IBK기업은행','SC제일은행','한국씨티은행','카카오뱅크','케이뱅크','토스뱅크','KDB산업은행','Sh수협은행','iM뱅크(대구)','부산은행','경남은행','광주은행','전북은행','제주은행','우체국','새마을금고','신협'];
 const BRAND = {"삼성화재":"#1428A0","메리츠화재":"#E60012","하나손해보험":"#00857A","현대해상":"#F37321","삼성생명":"#1428A0"};
-const FORM_FILES = {"삼성화재":"forms/samsung-fire.js","메리츠화재":"forms/meritz-fire.js","KB손해보험":"forms/kb-insure.js","DB손해보험":"forms/db-insure.js","삼성생명":"forms/samsung-life.js"};   // 공식 양식이 등록된 보험사
+const FORM_FILES = {"삼성화재":"forms/samsung-fire.js","메리츠화재":"forms/meritz-fire.js","KB손해보험":"forms/kb-insure.js","DB손해보험":"forms/db-insure.js","삼성생명":"forms/samsung-life.js","현대해상":"forms/hyundai-fire.js"};   // 공식 양식이 등록된 보험사
 // 공식 양식이 없는 보험사(표준 양식)용 동의 항목
 const GENERIC_CONSENT_UI = [
   {key:'collect', title:'[필수] 개인(신용)정보 수집·이용', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 수집·이용', desc:'고유식별정보, 민감정보(질병·상해 정보), 개인(신용)정보'}]},
@@ -1308,8 +1308,14 @@ async function appendClaim(doc,ins,mode,notes,sign){
     const pages=await doc.copyPages(src,idx);
     for(let i=0;i<pages.length;i++){
       const pg=doc.addPage(pages[i]), o=ops[idx[i]];
-      if(o&&o.length){ const {png,cut}=await overlayPng(o,F.size); cut.forEach(c=>notes.includes(c)||notes.push(c));
-        pg.drawImage(await doc.embedPng(png),{x:0,y:0,width:pg.getWidth(),height:pg.getHeight()}); }
+      if(o&&o.length){
+        // 지우개(흰 칸)는 벡터로 — 투명 PNG 가장자리에 회색 테두리가 비치는 것 방지
+        const W=pg.getWidth(), H=pg.getHeight(), sx=W/F.size[0], sy=H/F.size[1];
+        o.filter(x=>x.t==='rect').forEach(r=>{ const [x0,y0,x1,y1]=r.box, h=(r.fill||'#fff').slice(1), n=parseInt(h.length===3?h.replace(/./g,'$&$&'):h,16);
+          pg.drawRectangle({x:x0*sx,y:H-y1*sy,width:(x1-x0)*sx,height:(y1-y0)*sy,color:PDFLib.rgb((n>>16)/255,((n>>8)&255)/255,(n&255)/255),borderWidth:0}); });
+        const rest=o.filter(x=>x.t!=='rect');
+        if(rest.length){ const {png,cut}=await overlayPng(rest,F.size); cut.forEach(c=>notes.includes(c)||notes.push(c));
+          pg.drawImage(await doc.embedPng(png),{x:0,y:0,width:W,height:H}); } }
     }
   } else {
     const img=await doc.embedJpg(await sheetJpeg(ins,{sign}));
