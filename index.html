@@ -553,6 +553,7 @@ table.f td{font-size:9.4pt}
 
 <script src="vendor/pdf-lib.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';document.head.appendChild(s)"></script>
 <script src="vendor/html2canvas.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';document.head.appendChild(s)"></script>
+<script src="forms/consents.js"></script>
 <script src="js/sigcodec.js"></script>
 <script src="js/docfix.js"></script>
 <script src="data/fax-directory.js"></script>
@@ -571,7 +572,7 @@ INS["배상책임 (손해보험)"]=INS["손해보험"].map(n=>n+LIAB_SFX);
 const isLiab=n=>String(n).endsWith(LIAB_SFX), baseIns=n=>isLiab(n)?n.slice(0,-LIAB_SFX.length):n;
 const BANKS=['KB국민은행','신한은행','우리은행','하나은행','NH농협은행','지역농·축협','IBK기업은행','SC제일은행','한국씨티은행','카카오뱅크','케이뱅크','토스뱅크','KDB산업은행','Sh수협은행','iM뱅크(대구)','부산은행','경남은행','광주은행','전북은행','제주은행','우체국','새마을금고','신협'];
 const BRAND = {"삼성화재":"#1428A0","메리츠화재":"#E60012","하나손해보험":"#00857A","현대해상":"#F37321","삼성생명":"#1428A0"};
-const FORM_FILES = {"삼성화재":"forms/samsung-fire.js"};   // 공식 양식이 등록된 보험사
+const FORM_FILES = {"삼성화재":"forms/samsung-fire.js","메리츠화재":"forms/meritz-fire.js","KB손해보험":"forms/kb-insure.js","DB손해보험":"forms/db-insure.js","삼성생명":"forms/samsung-life.js"};   // 공식 양식이 등록된 보험사
 // 공식 양식이 없는 보험사(표준 양식)용 동의 항목
 const GENERIC_CONSENT_UI = [
   {key:'collect', title:'[필수] 개인(신용)정보 수집·이용', items:[{k:'all', label:'보험금 청구 심사·지급을 위한 수집·이용', desc:'고유식별정보, 민감정보(질병·상해 정보), 개인(신용)정보'}]},
@@ -629,6 +630,7 @@ function telVal(id){ const v=val(id); return /^0\d{0,2}-?$/.test(v)?'':v }   // 
 // 공식 양식에 쓸 값: 양식에 없는 안내방법(알림톡)은 기재란에 적는다
 function formData(ins){ const d=collect(), F=window.CLAIM_FORMS&&window.CLAIM_FORMS[ins];
   if(F&&d.notice.includes('알림톡')) d.noticeDetail=['카카오 알림톡',d.noticeDetail].filter(Boolean).join(' / ');
+  d.others=[...selected].filter(n=>n!==ins&&!isLiab(n));
   return d; }
 function radio(n){ const el=document.querySelector(`input[name="${n}"]:checked`); return el?el.value:'' }
 function checks(id){ return [...document.querySelectorAll(`#${id} input:checked`)].map(i=>i.value) }
@@ -723,7 +725,9 @@ function loadImg(src){ return new Promise((ok,no)=>{const im=new Image();im.onlo
 function loadForm(ins){
   if(!FORM_FILES[ins]) return Promise.resolve(null);
   if(formCache[ins]) return formCache[ins];
-  const prep=()=>{ const F=window.CLAIM_FORMS[ins]; if(!F.bytes) F.bytes=b64Bytes(F.pdf); if(!F.img) F.img=loadImg(F.bg); return F; };
+  const prep=()=>{ const F=window.CLAIM_FORMS[ins];
+    if(!F.bytes) F.bytes=F.pdf?Promise.resolve(b64Bytes(F.pdf)):fetch(F.pdfUrl).then(r=>{ if(!r.ok) throw new Error('양식 PDF를 받지 못했습니다'); return r.arrayBuffer() }).then(b=>new Uint8Array(b)).catch(e=>{ F.bytes=null; throw e });
+    if(!F.img) F.img=loadImg(F.bg); return F; };
   formCache[ins]=new Promise((ok,no)=>{
     if(window.CLAIM_FORMS&&window.CLAIM_FORMS[ins]) return ok(prep());
     const s=document.createElement('script'); s.src=FORM_FILES[ins];
@@ -747,6 +751,7 @@ function drawOps(cx,ops,k){
       const z=o.sz||1; cx.lineWidth=1.15*k*(z>1?z*0.75:1); cx.lineCap='round'; cx.lineJoin='round'; cx.beginPath();
       cx.moveTo((o.cx-2.4*z)*k,(o.cy-0.4*z)*k); cx.lineTo((o.cx-0.7*z)*k,(o.cy+2.1*z)*k); cx.lineTo((o.cx+3.0*z)*k,(o.cy-3.1*z)*k); cx.stroke(); continue;
     }
+    if(o.t==='rect'){ const [x0,y0,x1,y1]=o.box; cx.fillStyle=o.fill||'#fff'; cx.fillRect(x0*k,y0*k,(x1-x0)*k,(y1-y0)*k); cx.fillStyle='#000'; continue; }
     if(o.t==='img'){
       if(!o.img) continue;
       const [x0,y0,x1,y1]=o.box, bw=x1-x0, bh=y1-y0, iw=o.img.width, ih=o.img.height, sc=Math.min(bw/iw,bh/ih), w=iw*sc, h=ih*sc;
@@ -783,7 +788,7 @@ async function drawOfficial(el){
     const sv=signState(ins);
     cx.drawImage(img,0,0,cv.width,cv.height);
     const cut=drawOps(cx,F.fill(formData(ins),{sign:sv.ok?esign:null})[0]||[],k);
-    msg.innerHTML=`${esc(F.version)} · ${sv.ok?'<b style="color:var(--good)">전자서명 반영됨 (동의 체크는 2·4·5쪽)</b>':esc(F.signGuide)}`+(cut.length?`<br><span class="warn">⚠ 글자가 길어 잘린 칸: ${esc(cut.join(', '))}</span>`:'');
+    msg.innerHTML=`${esc(F.version)} · ${sv.ok?`<b style="color:var(--good)">전자서명 반영됨 (동의 체크는 ${esc(F.checkPages||(ins==='삼성화재'?'2·4·5쪽':'동의서 쪽'))})</b>`:esc(F.signGuide)}`+(cut.length?`<br><span class="warn">⚠ 글자가 길어 잘린 칸: ${esc(cut.join(', '))}</span>`:'');
   }catch(e){ msg.innerHTML=`<span class="warn">${esc(e.message)}</span>` }
 }
 const K300=300/72;
@@ -967,16 +972,21 @@ class Pad{
 const OV={step:1, consents:null, pads:[], ui:null, F:null};
 function blankConsents(ui,optUI){ const c={}; ui.forEach(g=>{ c[g.key]={}; g.items.forEach(i=>c[g.key][i.k]=null) }); c.optional={}; if(optUI) optUI.items.forEach(i=>c.optional[i.k]=null); return c }
 let signMsg='';
+// 동의서 전문 이미지: 양식별 그림 파일, 없으면 양식 파일 안의 그림
+async function consentDocs(names){ const out=[];
+  for(const n of names){ const S=(window.CONSENT_SETS||{})[n]||{}; let list=S.docs||[];
+    if(!list.length&&S.docsScript){ try{ const F=await loadForm(n); list=F.docs||[] }catch(e){} }
+    out.push({n,list}); }
+  return out; }
 async function openSign(){
   const d=collect();
   const need=[]; if(!d.insured.name) need.push('피보험자 이름'); if(!selected.size) need.push('청구할 보험사');
   if(need.length){ signMsg=`먼저 입력하세요: ${need.join(', ')}`; renderSignBox(); return signMsg; }
   signMsg='';
-  OV.F=null;
-  const off=[...selected].find(n=>FORM_FILES[n]);
-  if(off){ try{ OV.F=await loadForm(off) }catch(e){ OV.F=null } }
-  OV.ui=OV.F?OV.F.consentUI:GENERIC_CONSENT_UI;
-  OV.optUI=OV.F?OV.F.optionalUI:null;
+  // 공식 양식 보험사가 여럿이면 동의 항목을 합쳐 한 번만 묻는다 (forms/consents.js)
+  OV.F=window.mergeConsents?window.mergeConsents([...selected].filter(n=>FORM_FILES[n])):null; OV.docs=null;
+  OV.ui=OV.F?OV.F.ui:GENERIC_CONSENT_UI;
+  OV.optUI=OV.F?OV.F.opt:null;
   OV.consents=blankConsents(OV.ui,OV.optUI);
   OV.step=1; OV.pads=[]; OV.showDocs=false;
   $('#signOv').hidden=false; document.body.classList.add('locked'); showStep();
@@ -1003,13 +1013,13 @@ function showStep(){
     $('#ovNext').textContent='내용이 맞습니다';
   }
   if(OV.step===2){
-    const notice=OV.F?OV.F.requiredNotice:GENERIC_NOTICE;
+    const notice=OV.F?OV.F.notice:GENERIC_NOTICE;
     const grp=(g,opt)=>`<div class="cg"><h4>${esc(g.title)}</h4>${g.desc?`<p class="gdesc">${esc(g.desc)}</p>`:''}
       ${g.items.map(it=>{ const v=OV.consents[g.key][it.k]; return `<div class="ci"><div class="lab">${esc(it.label)}${it.desc?`<small>${esc(it.desc)}</small>`:''}</div>
         <div class="tog" role="group" aria-label="${esc(it.label)}"><button class="yes ${v===true?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="1" aria-pressed="${v===true}">동의함</button><button class="no ${v===false?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="0" aria-pressed="${v===false}">동의하지 않음</button></div></div>` }).join('')}</div>`;
     b.innerHTML=`<h3>개인(신용)정보 처리 동의</h3>
       <div class="notice">${esc(notice)}</div>
-      ${OV.F?`<button id="ovDocs" style="width:100%;margin-bottom:12px">${OV.showDocs?'동의서 전문 닫기':'동의서 전문 보기 (삼성화재 2~6쪽)'}</button>${OV.showDocs?`<div class="docs">${OV.F.docs.map((s,i)=>`<img src="${s}" alt="동의서 ${i+2}쪽">`).join('')}</div>`:''}`:''}
+      ${OV.F?`<button id="ovDocs" style="width:100%;margin-bottom:12px">${OV.showDocs?'동의서 전문 닫기':`동의서 전문 보기 (${esc(OV.F.names.join(' · '))})`}</button>${OV.showDocs?`<div class="docs">${OV.docs?OV.docs.map(x=>`<b style="font-size:14px">${esc(x.n)} 동의서</b>`+x.list.map((s,i)=>`<img src="${s}" alt="${esc(x.n)} 동의서 ${i+1}">`).join('')).join(''):'<p class="hint">불러오는 중…</p>'}</div>`:''}`:''}
       <button class="blue allbtn" id="ovAll">[필수] 항목 모두 동의함</button>
       ${OV.ui.map(g=>grp(g)).join('')}
       ${OV.optUI?grp(OV.optUI,true)+'<p class="hint" style="margin-top:-4px">[선택] 항목은 고르지 않고 넘어가셔도 됩니다.</p>':''}`;
@@ -1031,7 +1041,8 @@ $('#ovBody').addEventListener('click',e=>{
   const t=e.target;
   if(t.dataset.g){ OV.consents[t.dataset.g][t.dataset.k]=t.dataset.v==='1'; const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y; }
   if(t.id==='ovAll'){ OV.ui.forEach(g=>g.items.forEach(i=>OV.consents[g.key][i.k]=true)); const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y; }
-  if(t.id==='ovDocs'){ OV.showDocs=!OV.showDocs; const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y; }
+  if(t.id==='ovDocs'){ OV.showDocs=!OV.showDocs; const y=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y;
+    if(OV.showDocs&&!OV.docs) consentDocs(OV.F.names).then(r=>{ OV.docs=r; if(OV.showDocs&&OV.step===2){ const y2=$('#signOv').scrollTop; showStep(); $('#signOv').scrollTop=y2; } }); }
   if(t.dataset.clear!==undefined){ OV.pads[+t.dataset.clear]?.clear() }
 });
 $('#ovBack').addEventListener('click',()=>{ if(OV.step===1) return closeSign(); OV.step--; showStep() });
@@ -1293,7 +1304,7 @@ async function faxImage(a){
 async function appendClaim(doc,ins,mode,notes,sign){
   const F=await loadForm(ins);
   if(F){
-    const src=await PDFLib.PDFDocument.load(F.bytes), idx=mode==='print'?F.printPages:F.faxPages, ops=F.fill(formData(ins),{sign});
+    const src=await PDFLib.PDFDocument.load(await F.bytes), idx=mode==='print'?F.printPages:F.faxPages, ops=F.fill(formData(ins),{sign});
     const pages=await doc.copyPages(src,idx);
     for(let i=0;i<pages.length;i++){
       const pg=doc.addPage(pages[i]), o=ops[idx[i]];
@@ -1733,7 +1744,7 @@ async function reqRemote(){
   const ins=[...selected], role=d.guardian?'법정대리인':'피보험자', who=d.guardian||d.insured.name;
   const id=SigCodec.rid(), h=await claimHash(), box=await SigCodec.seal(snapForm()), t=Date.now();
   const l=pendList().filter(p=>p.h!==h); l.push({id,h,t,iv:box.iv,ct:box.ct,label:maskName(d.insured.name),ins}); pendSave(l); curReqHash=h;
-  const req={v:1,id,k:box.k,h,t,n:d.insured.name,who,role,ins,f:ins.some(n=>FORM_FILES[n])?'samsung':'generic',bn:d.beneficiary||'',
+  const req={v:1,id,k:box.k,h,t,n:d.insured.name,who,role,ins,f:ins.includes('삼성화재')?'samsung':'generic',fs:ins.filter(n=>FORM_FILES[n]),bn:d.beneficiary||'',
     s:{date:(fmtK(d.date)+(d.time?' '+d.time:'')).trim(),atype:ins.every(isLiab)?'배상책임':d.atype,hosp:d.hospital+(d.dept?` (${d.dept})`:''),dx:ins.every(isLiab)?d.liab.damage:d.dx,cov:d.cov,acct:acctText(d,true)}};
   if(ins.some(isLiab)) req.s.lb={v:maskName(d.liab.vname),d:d.liab.damage};
   const url=new URL('sign/',location.href.split('#')[0]).href+'#r='+await SigCodec.pack(req,true);

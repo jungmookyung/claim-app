@@ -72,6 +72,7 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 <main id="main"></main>
 <div class="foot" id="foot"><button id="back">이전</button><button class="go" id="next">다음</button></div>
 
+<script src="../forms/consents.js"></script>
 <script src="../js/sigcodec.js"></script>
 <script>
 (function(){
@@ -86,7 +87,7 @@ const VALID_HOURS = 24;
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const mask = n=>{ n=(n||'').trim(); return n.length<=1?n:n.length===2?n[0]+'*':n[0]+'*'.repeat(n.length-2)+n.slice(-1) };
-let R=null, C=null, step=1, showDocs=false, docs=null, pads=[];
+let R=null, C=null, U=null, step=1, showDocs=false, docs=null, pads=[];
 
 function fail(msg){ $('#main').innerHTML=`<h1>서명 화면을 열 수 없어요</h1><p class="lead">${esc(msg)}</p><p class="lead">담당 설계사에게 서명 요청을 다시 보내 달라고 해주세요.</p>`; $('#foot').hidden=true; $('#steps').hidden=true }
 
@@ -125,13 +126,12 @@ function render(){
     $('#next').textContent='내용이 맞아요';
   }
   if(step===2){
-    const U=R.f==='samsung'?SAMSUNG:GENERIC;
     const grp=g=>`<div class="cg"><h2>${esc(g.title)}</h2>${g.desc?`<p class="gd">${esc(g.desc)}</p>`:''}${g.items.map(it=>{ const v=C[g.key][it.k];
       return `<div class="ci"><div class="lab">${esc(it.label)}${it.desc?`<small>${esc(it.desc)}</small>`:''}</div>
       <div class="tog"><button class="y ${v===true?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="1" aria-pressed="${v===true}">동의함</button><button class="n ${v===false?'on':''}" data-g="${g.key}" data-k="${it.k}" data-v="0" aria-pressed="${v===false}">동의하지 않음</button></div></div>` }).join('')}</div>`;
     m.innerHTML=`<h1>개인(신용)정보 동의를<br>골라 주세요</h1>
       <div class="notice">${esc(U.notice)}</div>
-      ${R.f==='samsung'?`<button class="docbtn" id="docBtn">${showDocs?'동의서 전문 닫기':'동의서 전문 보기 (삼성화재 2~6쪽)'}</button>${showDocs?`<div class="docs">${docs?docs.map((s,i)=>`<img src="${s}" alt="동의서 ${i+2}쪽">`).join(''):'<p class="lead">불러오는 중…</p>'}</div>`:''}`:''}
+      ${U.names&&U.names.length?`<button class="docbtn" id="docBtn">${showDocs?'동의서 전문 닫기':`동의서 전문 보기 (${esc(U.names.join(' · '))})`}</button>${showDocs?`<div class="docs">${docs?docs.map(x=>`<p class="lead" style="margin:6px 0"><b>${esc(x.n)} 동의서</b></p>`+x.list.map((s,i)=>`<img src="${s}" alt="${esc(x.n)} 동의서 ${i+1}">`).join('')).join(''):'<p class="lead">불러오는 중…</p>'}</div>`:''}`:''}
       <button class="all" id="allBtn">[필수] 항목 모두 동의함</button>
       ${U.ui.map(grp).join('')}
       ${U.opt?grp(U.opt)+'<p class="priv" style="margin-top:-4px">[선택] 항목은 고르지 않고 넘어가셔도 됩니다.</p>':''}`;
@@ -175,14 +175,21 @@ async function finish(){
 document.addEventListener('click',async e=>{
   const t=e.target;
   if(t.dataset&&t.dataset.g){ C[t.dataset.g][t.dataset.k]=t.dataset.v==='1'; const y=window.scrollY; render(); window.scrollTo(0,y) }
-  if(t.id==='allBtn'){ const U=R.f==='samsung'?SAMSUNG:GENERIC; U.ui.forEach(g=>g.items.forEach(i=>C[g.key][i.k]=true)); const y=window.scrollY; render(); window.scrollTo(0,y) }
+  if(t.id==='allBtn'){ U.ui.forEach(g=>g.items.forEach(i=>C[g.key][i.k]=true)); const y=window.scrollY; render(); window.scrollTo(0,y) }
   if(t.dataset&&t.dataset.clr!==undefined) pads[+t.dataset.clr]&&pads[+t.dataset.clr].clear();
   if(t.id==='docBtn'){ showDocs=!showDocs; const y=window.scrollY; render(); window.scrollTo(0,y);
-    if(showDocs&&!docs){ const s=document.createElement('script'); s.src='../forms/samsung-fire.js'; s.onload=()=>{ docs=(window.CLAIM_FORMS&&window.CLAIM_FORMS['삼성화재']||{}).docs||[]; if(showDocs){ const y2=window.scrollY; render(); window.scrollTo(0,y2) } }; document.head.appendChild(s) } }
+    if(showDocs&&!docs) loadDocs().then(r=>{ docs=r; if(showDocs&&step===2){ const y2=window.scrollY; render(); window.scrollTo(0,y2) } }); }
 });
+// 동의서 전문 그림 (양식별 그림 파일, 없으면 양식 파일 안의 그림)
+function loadScript(src){ return new Promise(ok=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=ok; document.head.appendChild(s) }) }
+async function loadDocs(){ const out=[];
+  for(const n of U.names||[]){ const S=(window.CONSENT_SETS||{})[n]||{}; let list=(S.docs||[]).map(u=>/^(data:|https?:)/.test(u)?u:'../'+u);
+    if(!list.length&&(S.docsScript||n==='삼성화재')){ await loadScript('../'+(S.docsScript||'forms/samsung-fire.js')); list=((window.CLAIM_FORMS||{})[n]||{}).docs||[] }
+    out.push({n,list}) }
+  return out }
 $('#back').onclick=()=>{ if(step>1){ step--; render() } };
 $('#next').onclick=()=>{
-  if(step===2){ const U=R.f==='samsung'?SAMSUNG:GENERIC; const open=U.ui.flatMap(g=>g.items.filter(i=>C[g.key][i.k]===null));
+  if(step===2){ const open=U.ui.flatMap(g=>g.items.filter(i=>C[g.key][i.k]===null));
     if(open.length){ $('#err').textContent=`[필수] 항목 ${open.length}개를 아직 고르지 않으셨어요.`; return } }
   if(step===3){ const e=pads.findIndex(p=>p.empty()); if(e>=0){ $('#err').textContent=e?'보험수익자 서명 칸에 서명해 주세요.':'서명 칸에 서명해 주세요.'; return } return finish() }
   step++; render();
@@ -198,7 +205,10 @@ window.addEventListener('resize',()=>{ if(step!==3) return; pads.forEach(p=>{ if
   if(!R||R.v!==1||!R.h||!R.id) return fail('주소가 올바르지 않아요.');
   if(Date.now()-R.t>VALID_HOURS*3600e3) return fail(`서명 요청 링크는 ${VALID_HOURS}시간 동안만 쓸 수 있어요.`);
   history.replaceState(null,'',location.pathname);   // 주소창·방문기록에 청구 내용이 남지 않게
-  const U=R.f==='samsung'?SAMSUNG:GENERIC; C={};
+  // 공식 양식 보험사들의 동의 항목을 합쳐서 묻는다 (forms/consents.js) — 못 불러오면 내장 목록
+  const names=R.fs&&R.fs.length?R.fs:(R.f==='samsung'?['삼성화재']:[]);
+  const M=window.mergeConsents?window.mergeConsents(names):null;
+  U=M||(R.f==='samsung'?Object.assign({names:['삼성화재']},SAMSUNG):GENERIC); C={};
   U.ui.forEach(g=>{ C[g.key]={}; g.items.forEach(i=>C[g.key][i.k]=null) }); C.optional={}; if(U.opt) U.opt.items.forEach(i=>C.optional[i.k]=null);
   $('#topSub').textContent=`담당 설계사가 보낸 서명 요청 · ${VALID_HOURS}시간 동안 유효`;
   render();
