@@ -114,6 +114,25 @@ input:disabled{background:var(--fill);color:var(--sub)}
 .sendbar .who .tag{display:inline-block;font-size:10.5px;font-weight:900;background:#2f8a57;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px}
 .sendbar .acts{display:flex;gap:6px;flex-wrap:wrap}
 .sendbar button.go{background:var(--accent);border-color:var(--accent);color:#1b1205}
+button.prs{background:#2f8a57;border-color:#2f8a57;color:#fff}
+.clog{width:210mm;max-width:100%;margin:0 auto 10px;background:#fff;border:1px solid #d8dee9;border-radius:10px;padding:10px 12px}
+.clog .ch{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.clog .ch b{font-size:14px}
+.clog .ch .cnt{font-size:12px;opacity:.7}
+.clog .flt{margin-left:auto;display:flex;gap:4px}
+.clog .flt button{font-size:12px;padding:4px 9px}
+.clog .flt button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.clog ul{list-style:none;margin:8px 0 0;padding:0}
+.clog li{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 2px;border-top:1px solid #eef1f6;font-size:13px;font-variant-numeric:tabular-nums}
+.clog li.new{background:var(--hl-bg);border-radius:6px}
+.clog li .tm{opacity:.65;min-width:74px}
+.clog li .nm{font-weight:800}
+.clog li .ac{opacity:.7;font-size:12px}
+.clog li .x{margin-left:auto;font-size:12px;padding:2px 8px;opacity:.6}
+.clog .empty{font-size:12.5px;opacity:.7;padding:8px 2px 2px}
+.clog .foot{font-size:12px;opacity:.85;margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.clog .foot button{font-size:12px;padding:4px 9px}
+button.prs.off{background:#9aa3ad;border-color:#9aa3ad}
 .sendbar .st{flex-basis:100%;font-size:12px;line-height:1.5;opacity:.95}
 .sendbar .st:empty{display:none}
 .sp{width:210mm;max-width:100%;margin:0 auto 8px;background:#fff;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:12px 14px}
@@ -511,7 +530,8 @@ table.f td{font-size:9.4pt}
     <p class="hint">팩스에서 청구서·동의서 뒤에 이 순서대로 붙습니다. 사진은 서류 모서리를 찾아 <b>반듯하게 펴고 흑백 선명하게</b> 바꿉니다(폰 안에서 처리). 잘못 잡혔으면 [모서리]로 고치세요.</p>
   </section>
 
-  <div class="outbar"><b>청구서류</b><div class="acts"><button id="btnPrintAll">모두 서명용 PDF</button><button class="primary" id="btnFaxAll">전체 팩스 준비</button></div></div>
+  <div class="outbar"><b>청구서류</b><div class="acts"><button id="btnPrintAll">모두 서명용 PDF</button><button id="btnSignedAll" class="prs" hidden>모두 서명본 PDF</button><button class="primary" id="btnFaxAll">전체 팩스 준비</button></div></div>
+  <div id="claimLog" class="clog" hidden></div>
   <div id="docs"></div>
 
   <section class="rcard" id="srvSec" hidden>
@@ -1206,7 +1226,7 @@ function sendbar(ins){
   const S=sp(ins);
   return `<div class="sendbar ${S.open?'':'solo'}" data-ins="${esc(ins)}">
     <div class="who">${esc(ins)}${FORM_FILES[ins]?'<span class="tag">공식양식</span>':''}<small>팩스 <span class="faxno">${fax[ins]?esc(fax[ins]):'⚠ 번호 미입력'}</span> · 첨부 ${atts.length}건 · ${signState(ins).ok?'서명 완료':'서명 전'}${S.sentAt?` · 보냄 ${hhmm(S.sentAt)}`:''}</small></div>
-    <div class="acts"><button class="pr">서명용 PDF</button><button class="go fx">${S.open?'발송 닫기':'팩스 보내기'}</button></div>
+    <div class="acts"><button class="pr">서명용 PDF</button>${esign?`<button class="prs${signState(ins).ok?'':' off'}" title="고객 서명·동의 체크가 들어간 PDF">서명본 PDF</button>`:''}<button class="go fx">${S.open?'발송 닫기':'팩스 보내기'}</button></div>
     <div class="st"></div>
   </div>${S.open?spHTML(ins):''}`;
 }
@@ -1230,6 +1250,7 @@ function render(){
   $('#liabBlock').hidden = ![...selected].some(isLiab);
   { const ap=$('#autopay').checked; ['bank','acct','holder'].forEach(id=>$('#'+id).disabled=ap); }
   renderSignBox();
+  { const b=$('#btnSignedAll'); if(b) b.hidden=![...selected].some(i=>signState(i).ok); }
   const list=[...selected], pv=$('#docs');
   if(!list.length){ pv.innerHTML=HERO; return; }
   pv.innerHTML=list.map(ins=>sendbar(ins)+(FORM_FILES[ins]
@@ -1336,7 +1357,7 @@ async function appendFiles(doc,list,skipped){
   }
 }
 function mmdd(){ const t=new Date(); return `${t.getMonth()+1}`.padStart(2,'0')+`${t.getDate()}`.padStart(2,'0') }
-// mode: 'print'(종이 서명용, 서명 없음) | 'fax'(서명본 + 첨부)
+// mode: 'print'(종이 서명용, 서명 없음) | 'signed'(서명용 쪽 전체 + 고객 서명·동의) | 'fax'(서명본 + 첨부)
 async function buildPdf(ins,mode){
   const doc=await PDFLib.PDFDocument.create(), notes=[], skipped=[];
   if(mode==='fax'){
@@ -1344,8 +1365,8 @@ async function buildPdf(ins,mode){
     if(S.src==='scan') await appendFiles(doc,S.scans,skipped);
     else await appendClaim(doc,ins,'fax',notes,signState(ins).ok?esign:null);
     await appendFiles(doc,atts,skipped);
-  } else await appendClaim(doc,ins,'print',notes,null);
-  const name=mode==='fax'?`${ins}_보험금청구_팩스용_${mmdd()}.pdf`:`${ins}_청구서_서명용_${mmdd()}.pdf`;
+  } else await appendClaim(doc,ins,'print',notes,mode==='signed'&&signState(ins).ok?esign:null);
+  const name=mode==='fax'?`${ins}_보험금청구_팩스용_${mmdd()}.pdf`:mode==='signed'?`${ins}_보험금청구_서명본_${mmdd()}.pdf`:`${ins}_청구서_서명용_${mmdd()}.pdf`;
   return {file:new File([await doc.save()],name,{type:'application/pdf'}),pages:doc.getPageCount(),notes,skipped};
 }
 function libsOk(){ return !!(window.PDFLib&&window.html2canvas) }
@@ -1358,7 +1379,7 @@ async function buildFax(ins){
     const r=await buildPdf(ins,'fax');
     S.mphase='idle';
     if(r.skipped.length) return setSP(ins,`열 수 없는 파일이 있습니다: ${r.skipped.join(', ')} — 7번에서 빼거나 다시 올려주세요.`,'bad');
-    S.file=r.file; S.pages=r.pages; S.builtKey=builtKeyOf(ins); S.sentAt=null;
+    S.file=r.file; S.pages=r.pages; S.builtKey=builtKeyOf(ins); S.sentAt=null; logAdd(ins,'팩스용',r.pages);
     setSP(ins,`팩스용 PDF 준비 완료 · ${summary(r,ins)} — [모바일팩스 열기]를 누르세요`);
   }catch(err){ S.mphase='idle'; setSP(ins,'PDF를 만들지 못했습니다: '+err.message,'bad') }
 }
@@ -1421,12 +1442,17 @@ function poll(ins){
 $('#preview').addEventListener('click',async e=>{
   const t=e.target, holder=t.closest('[data-ins]'); if(!holder) return;
   const ins=holder.dataset.ins, S=sp(ins);
-  if(t.classList.contains('pr')){
+  if(t.classList.contains('pr')||t.classList.contains('prs')){
     const st=holder.querySelector('.st');
     if(!libsOk()){ st.textContent='PDF 도구를 불러오지 못했습니다. 새로고침하세요.'; return }
-    t.disabled=true; st.textContent='서명용 PDF 만드는 중…';
-    try{ const r=await buildPdf(ins,'print'); download(r.file);
-      st.textContent=`서명용 PDF 저장 완료 · ${summary(r,ins)} · ${FORM_FILES[ins]?window.CLAIM_FORMS[ins].signGuide:'서명·동의 체크는 고객 직접'}`;
+    // [서명용 PDF] = 종이 서명용 빈 양식 / [서명본 PDF] = 고객 전자서명·동의 체크가 들어간 것
+    const sv=signState(ins), signed=t.classList.contains('prs');
+    if(signed&&!sv.ok){ st.textContent=`⚠ 서명본을 만들 수 없습니다: ${sv.why}`; return }
+    t.disabled=true; st.textContent=signed?'서명본 PDF 만드는 중…':'서명용 PDF 만드는 중…';
+    try{ const r=await buildPdf(ins,signed?'signed':'print'); download(r.file); logAdd(ins,signed?'서명본':'서명용',r.pages);
+      st.textContent=signed
+        ?`서명본 PDF 저장 완료 · ${summary(r,ins)} · 고객 서명·동의 체크 들어감`
+        :`서명용 PDF 저장 완료 · ${summary(r,ins)} · ${FORM_FILES[ins]?window.CLAIM_FORMS[ins].signGuide:'서명·동의 체크는 고객 직접'}`;
     }catch(err){ st.textContent='PDF를 만들지 못했습니다: '+err.message }
     t.disabled=false;
   }
@@ -1456,7 +1482,7 @@ $('#preview').addEventListener('click',async e=>{
     } else saved('');
   }
   if(t.classList.contains('sp-save')&&S.file){ download(S.file); setSP(ins,`PDF를 저장했습니다 (${S.file.name}) — 모바일팩스 앱 [팩스발송] → [사진/문서 첨부] → 문서에서 고르세요.`) }
-  if(t.classList.contains('sp-done')&&S.file){ S.sentAt=new Date(); S.text=`보냄 표시 ${hhmm(S.sentAt)} — 전송 결과는 모바일팩스 앱의 보낸 팩스함에서 확인하세요.`; S.tone='good'; render(); }
+  if(t.classList.contains('sp-done')&&S.file){ logSent(ins); S.sentAt=new Date(); S.text=`보냄 표시 ${hhmm(S.sentAt)} — 전송 결과는 모바일팩스 앱의 보낸 팩스함에서 확인하세요.`; S.tone='good'; render(); }
   if(t.classList.contains('sp-redo')){ S.file=null; S.sentAt=null; setSP(ins,''); }
 });
 $('#preview').addEventListener('change',e=>{
@@ -1470,6 +1496,20 @@ $('#preview').addEventListener('input',e=>{ const t=e.target; if(t.classList.con
 // ======================================================================
 //  상단 버튼
 // ======================================================================
+$('#btnSignedAll').addEventListener('click',async e=>{
+  const btn=e.currentTarget, old=btn.textContent, list=[...selected].filter(i=>signState(i).ok);
+  if(!list.length){ btn.textContent='서명 완료된 보험사가 없습니다'; setTimeout(()=>btn.textContent=old,1800); return; }
+  if(!libsOk()){ btn.textContent='PDF 도구 로딩 실패'; setTimeout(()=>btn.textContent=old,1800); return; }
+  btn.disabled=true; btn.textContent='만드는 중…';
+  try{ const doc=await PDFLib.PDFDocument.create(), notes=[];
+    for(const ins of list) await appendClaim(doc,ins,'print',notes,esign);
+    download(new File([await doc.save()],`${collect().insured.name||'고객'}_보험금청구_서명본_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
+    list.forEach(ins=>logAdd(ins,'서명본',0));
+    const skip=selected.size-list.length;
+    btn.textContent=`저장 완료 (${list.length}곳 · ${doc.getPageCount()}쪽${skip?` · 서명 안 된 ${skip}곳 뺌`:''})`;
+  }catch(err){ btn.textContent='실패: '+err.message }
+  setTimeout(()=>{btn.textContent=old;btn.disabled=false},2600);
+});
 $('#btnPrintAll').addEventListener('click',async e=>{
   const btn=e.currentTarget, old=btn.textContent;
   if(!selected.size){ btn.textContent='보험사를 먼저 선택하세요'; setTimeout(()=>btn.textContent=old,1500); return; }
@@ -1478,6 +1518,7 @@ $('#btnPrintAll').addEventListener('click',async e=>{
   try{ const doc=await PDFLib.PDFDocument.create(), notes=[];
     for(const ins of selected) await appendClaim(doc,ins,'print',notes,null);
     download(new File([await doc.save()],`${collect().insured.name||'고객'}_청구서_서명용_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
+    [...selected].forEach(ins=>logAdd(ins,'서명용',0));
     btn.textContent=`저장 완료 (${doc.getPageCount()}쪽)`;
   }catch(err){ btn.textContent='실패: '+err.message }
   setTimeout(()=>{btn.textContent=old;btn.disabled=false},2200);
@@ -1568,15 +1609,78 @@ async function unlock(create){
     if(!create) return false;
     const pin=await pinBox('고객 저장용 PIN 만들기','처음 한 번만 정합니다. 고객 정보는 이 PIN으로 암호화돼 <b>이 폰에만</b> 저장됩니다.<br>PIN을 잊으면 저장된 고객을 열 수 없으니 꼭 기억해 두세요.',true);
     if(!pin) return false;
-    VAULT.salt=crypto.getRandomValues(new Uint8Array(16)); VAULT.key=await deriveKey(pin,VAULT.salt); VAULT.list=[]; await vaultSave(); return true;
+    VAULT.salt=crypto.getRandomValues(new Uint8Array(16)); VAULT.key=await deriveKey(pin,VAULT.salt); VAULT.list=[]; await vaultSave(); await logAfterUnlock(); return true;
   }
   for(let tries=0;tries<5;tries++){
     const pin=await pinBox('PIN 입력',tries?'<span class="warn">PIN이 맞지 않습니다. 다시 넣어주세요.</span>':'저장된 고객을 열려면 PIN 6자리를 넣어주세요.',false);
     if(!pin) return false;
-    try{ const salt=fromB64(raw.salt), key=await deriveKey(pin,salt); VAULT.list=await decryptBlob(raw,key); VAULT.key=key; VAULT.salt=salt; return true }catch(e){}
+    try{ const salt=fromB64(raw.salt), key=await deriveKey(pin,salt); VAULT.list=await decryptBlob(raw,key); VAULT.key=key; VAULT.salt=salt; await logAfterUnlock(); return true }catch(e){}
   }
   custMsg('PIN이 5번 틀렸습니다. 잠시 후 다시 시도하세요.'); return false;
 }
+
+// ======================================================================
+//  청구 기록 — PDF를 만들면 '누구 · 어느 보험사 · 무슨 PDF'를 목록으로 남김
+//  이 폰에만, 고객 저장과 같은 PIN으로 암호화. 주민번호·진단명·계좌·서명은 남기지 않음
+// ======================================================================
+const LKEY='claimLogV1';
+let LOG=[], logDirty=false, logFilter='today', logNewId=null;
+function logRaw(){ try{ return JSON.parse(localStorage.getItem(LKEY)||'null') }catch(e){ return null } }
+const ymdOf=t=>{ const d=new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` };
+async function logPersist(){
+  if(!VAULT.key){ logDirty=true; return }
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},VAULT.key,te.encode(JSON.stringify(LOG)));
+  localStorage.setItem(LKEY,JSON.stringify({v:1,iv:toB64(iv),data:toB64(ct),n:LOG.length})); logDirty=false;
+}
+async function logAfterUnlock(){
+  const raw=logRaw();
+  if(raw){ try{ const old=await decryptBlob(raw,VAULT.key), ids=new Set(LOG.map(x=>x.id)); old.forEach(x=>{ if(!ids.has(x.id)) LOG.push(x) }); }catch(e){} }
+  LOG.sort((a,b)=>a.t<b.t?1:-1); if(LOG.length>300) LOG.length=300;
+  if(logDirty||raw) await logPersist(); logRender();
+}
+function logAdd(ins,kind,pages){
+  const d=collect(), now=new Date(), name=d.insured.name||'(이름 없음)';
+  const same=LOG.find(x=>x.name===name&&x.ins===ins&&x.acc===d.date&&x.kind===kind&&ymdOf(x.t)===ymdOf(now));
+  if(same){ same.t=now.toISOString(); same.pages=pages||same.pages; LOG.sort((a,b)=>a.t<b.t?1:-1); logNewId=same.id; }
+  else { const id=now.getTime().toString(36)+Math.random().toString(36).slice(2,6);
+    LOG.unshift({id,t:now.toISOString(),name,ins,acc:d.date||'',atype:d.atype||'',kind,pages:pages||0,sent:null}); logNewId=id; }
+  if(LOG.length>300) LOG.length=300;
+  logPersist().finally(()=>logRender(true));
+}
+function logSent(ins){
+  const d=collect(), name=d.insured.name||'(이름 없음)';
+  const r=LOG.find(x=>x.name===name&&x.ins===ins&&x.acc===d.date&&x.kind==='팩스용');
+  if(!r) return; r.sent=new Date().toISOString(); logNewId=r.id; logPersist().finally(()=>logRender(true));
+}
+function logRender(open){
+  const el=$('#claimLog'); if(!el) return;
+  const raw=logRaw(), locked=!VAULT.key&&raw&&!LOG.length;
+  if(!LOG.length&&!raw){ el.hidden=true; return }
+  el.hidden=false;
+  const today=ymdOf(new Date()), wk=Date.now()-7*864e5;
+  const rows=LOG.filter(x=>logFilter==='all'||(logFilter==='today'?ymdOf(x.t)===today:new Date(x.t).getTime()>=wk));
+  const nToday=LOG.filter(x=>ymdOf(x.t)===today).length;
+  const tm=t=>{ const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${hhmm(d)}` };
+  const md=v=>{ if(!v) return ''; const a=v.split('-'); return `사고 ${+a[1]}/${+a[2]}` };
+  const chip=x=>x.kind==='서명본'?'<span class="chip ok">서명본</span>':x.kind==='팩스용'?(x.sent?`<span class="chip ok">팩스 보냄 ${hhmm(new Date(x.sent))}</span>`:'<span class="chip mode">팩스용 PDF</span>'):'<span class="chip off">서명용(빈 양식)</span>';
+  let foot='';
+  if(VAULT.key) foot='이 폰에만 PIN으로 암호화 저장 · 주민번호·진단명·계좌·서명은 남기지 않음';
+  else if(raw&&!LOG.length) foot=`저장된 기록 ${raw.n||0}건 <button id="logOpen">PIN 넣고 보기</button>`;
+  else if(raw) foot=`지금 만든 기록은 아직 저장 전 <button id="logSave">PIN 넣고 저장</button>`;
+  else foot=`아직 이 화면에만 있음 (앱을 닫으면 사라짐) <button id="logSave">PIN 만들고 저장</button>`;
+  el.innerHTML=`<div class="ch"><b>📋 청구 기록</b><span class="cnt">${locked?'잠김':`오늘 ${nToday}건 · 전체 ${LOG.length}건`}</span>
+      <div class="flt">${[['today','오늘'],['week','7일'],['all','전체']].map(([k,l])=>`<button data-lf="${k}" class="${logFilter===k?'on':''}">${l}</button>`).join('')}</div></div>
+    ${locked?'':rows.length?`<ul>${rows.map(x=>`<li class="${x.id===logNewId?'new':''}"><span class="tm">${tm(x.t)}</span><span class="nm">${esc(x.name)}</span><span>${esc(x.ins)}</span><span class="ac">${md(x.acc)}${x.atype?' · '+esc(x.atype):''}</span>${chip(x)}<button class="x" data-lx="${x.id}" title="이 줄 지우기">×</button></li>`).join('')}</ul>`:`<div class="empty">${logFilter==='today'?'오늘 만든 PDF가 없습니다':'기록이 없습니다'}</div>`}
+    <div class="foot">${foot}</div>`;
+  if(open&&logNewId){ const li=el.querySelector('li.new'); if(li&&li.getBoundingClientRect().top>innerHeight) li.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+}
+document.addEventListener('click',async e=>{
+  const t=e.target; if(!t.closest||!t.closest('#claimLog')) return;
+  if(t.dataset.lf){ logFilter=t.dataset.lf; logRender(); }
+  if(t.dataset.lx){ if(!confirm('이 기록을 지울까요?')) return; LOG=LOG.filter(x=>x.id!==t.dataset.lx); await logPersist(); logRender(); }
+  if(t.id==='logSave'||t.id==='logOpen'){ const ok=await unlock(!vaultRaw()); if(ok) await logAfterUnlock(); }
+});
 
 // ---- 화면 값 ↔ 고객 기록
 let keepRrnBack=true;
@@ -1676,7 +1780,7 @@ $('#moIn').addEventListener('click',async e=>{
   }
   if(t.id==='cWipe'){
     if(!confirm(`저장된 고객 ${VAULT.list.length}명을 이 폰에서 모두 지울까요? 되돌릴 수 없습니다.`)) return;
-    localStorage.removeItem(VKEY); VAULT.key=null; VAULT.list=null; VAULT.salt=null; curCust=null; moClose(); custUI('저장된 고객을 모두 지웠습니다.'); return;
+    localStorage.removeItem(VKEY); localStorage.removeItem(LKEY); LOG=[]; logRender(); VAULT.key=null; VAULT.list=null; VAULT.salt=null; curCust=null; moClose(); custUI('저장된 고객·청구 기록을 모두 지웠습니다.'); return;
   }
 });
 $('#moIn').addEventListener('change',async e=>{
@@ -1900,7 +2004,7 @@ $('#btnFaxAll').addEventListener('click',()=>{
 // 시작: 맥미니 서버로 열렸는지 확인
 $('#w_date').value=todayStr(); $('#c_tel').value=TEL_PREFIX;
 $('#bankList').innerHTML=BANKS.map(b=>`<option value="${b}">`).join('');
-renderInsList(); renderFax(); renderAtts(); render(); custUI();
+renderInsList(); renderFax(); renderAtts(); render(); custUI(); logRender();
 detectServer();
 bootReply();
 setInterval(refreshReqHash,1500);
