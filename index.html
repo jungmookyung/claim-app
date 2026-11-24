@@ -1356,6 +1356,7 @@ async function appendFiles(doc,list,skipped){
     }catch(err){ skipped.push(a.name) }
   }
 }
+function fileName(t){ return String(t||'').replace(/[\\/:*?"<>|#%]/g,'').replace(/\s+/g,'').slice(0,20) }  // 파일 이름에 못 쓰는 글자 빼기
 function mmdd(){ const t=new Date(); return `${t.getMonth()+1}`.padStart(2,'0')+`${t.getDate()}`.padStart(2,'0') }
 // mode: 'print'(종이 서명용, 서명 없음) | 'signed'(서명용 쪽 전체 + 고객 서명·동의) | 'fax'(서명본 + 첨부)
 async function buildPdf(ins,mode){
@@ -1366,7 +1367,8 @@ async function buildPdf(ins,mode){
     else await appendClaim(doc,ins,'fax',notes,signState(ins).ok?esign:null);
     await appendFiles(doc,atts,skipped);
   } else await appendClaim(doc,ins,'print',notes,mode==='signed'&&signState(ins).ok?esign:null);
-  const name=mode==='fax'?`${ins}_보험금청구_팩스용_${mmdd()}.pdf`:mode==='signed'?`${ins}_보험금청구_서명본_${mmdd()}.pdf`:`${ins}_청구서_서명용_${mmdd()}.pdf`;
+  const who=fileName(collect().insured.name)||'고객';     // 파일 이름 맨 앞에 고객(피보험자) 이름
+  const name=mode==='fax'?`${who}_${ins}_보험금청구_팩스용_${mmdd()}.pdf`:mode==='signed'?`${who}_${ins}_보험금청구_서명본_${mmdd()}.pdf`:`${who}_${ins}_청구서_서명용_${mmdd()}.pdf`;
   return {file:new File([await doc.save()],name,{type:'application/pdf'}),pages:doc.getPageCount(),notes,skipped};
 }
 function libsOk(){ return !!(window.PDFLib&&window.html2canvas) }
@@ -1503,7 +1505,7 @@ $('#btnSignedAll').addEventListener('click',async e=>{
   btn.disabled=true; btn.textContent='만드는 중…';
   try{ const doc=await PDFLib.PDFDocument.create(), notes=[];
     for(const ins of list) await appendClaim(doc,ins,'print',notes,esign);
-    download(new File([await doc.save()],`${collect().insured.name||'고객'}_보험금청구_서명본_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
+    download(new File([await doc.save()],`${fileName(collect().insured.name)||'고객'}_보험금청구_서명본_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
     list.forEach(ins=>logAdd(ins,'서명본',0));
     const skip=selected.size-list.length;
     btn.textContent=`저장 완료 (${list.length}곳 · ${doc.getPageCount()}쪽${skip?` · 서명 안 된 ${skip}곳 뺌`:''})`;
@@ -1517,7 +1519,7 @@ $('#btnPrintAll').addEventListener('click',async e=>{
   btn.disabled=true; btn.textContent='만드는 중…';
   try{ const doc=await PDFLib.PDFDocument.create(), notes=[];
     for(const ins of selected) await appendClaim(doc,ins,'print',notes,null);
-    download(new File([await doc.save()],`${collect().insured.name||'고객'}_청구서_서명용_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
+    download(new File([await doc.save()],`${fileName(collect().insured.name)||'고객'}_청구서_서명용_전체_${mmdd()}.pdf`,{type:'application/pdf'}));
     [...selected].forEach(ins=>logAdd(ins,'서명용',0));
     btn.textContent=`저장 완료 (${doc.getPageCount()}쪽)`;
   }catch(err){ btn.textContent='실패: '+err.message }
