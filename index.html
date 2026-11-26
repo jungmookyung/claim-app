@@ -1913,6 +1913,38 @@ function pasteReply(){
   $('#pasteOk').onclick=go; $('#pasteNo').onclick=moClose;
   const c=$('#pasteClip'); if(c) c.onclick=async()=>{ try{ $('#pasteIn').value=await navigator.clipboard.readText(); go() }catch(e){ $('#pasteErr').textContent='복사한 내용을 읽지 못했어요. 칸을 길게 눌러 붙여넣으세요.' } };
 }
+// MK CRM [사고접수]로 열렸을 때 (#crm=) — 이름·생년월일(·휴대폰)만 받음. 주소창에서 바로 지우고 어디에도 안 남김
+//   주민번호 뒷자리는 CRM에 없으니 형이 직접, 또는 이 폰에 저장된 고객(PIN)에서 불러오기
+async function bootCRM(){
+  const m=location.hash.match(/^#crm=([A-Za-z0-9_-]{4,600})$/); if(!m) return;
+  history.replaceState(null,'',location.pathname+location.search);
+  let d; try{ let b=m[1].replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4) b+='='; d=JSON.parse(td.decode(fromB64(b))) }catch(e){ return }
+  const name=String(d.n||'').replace(/[<>"']/g,'').trim().slice(0,20), birth=onlyDigits(d.b||'').slice(0,6), tel=onlyDigits(d.t||'').slice(0,11);
+  if(!name) return;
+  const fmtTel=t=>t.length===11?`${t.slice(0,3)}-${t.slice(3,7)}-${t.slice(7)}`:t.length===10?`${t.slice(0,3)}-${t.slice(3,6)}-${t.slice(6)}`:'';
+  const fillPartial=()=>{
+    const cur=collect().insured.name;
+    if(cur&&cur!==name&&!confirm(`지금 입력 중인 내용(${cur})이 지워지고 ${name}님으로 바뀝니다. 계속할까요?`)) return;
+    resetForm(); curCust=null;
+    $('#c_name').value=name; $('#c_rrn').value=birth.length===6?birth+'-':''; $('#c_tel').value=fmtTel(tel)||TEL_PREFIX; $('#same').checked=true;
+    renderInsList(); renderFax(); render();
+    custUI(`MK CRM에서 ${name}님 이름${birth?'·생년월일':''}${tel?'·휴대폰':''}을 가져왔습니다. 주민번호 뒷자리${tel?'':'·휴대폰'}만 넣으세요.`);
+    const el=$('#c_rrn'); el.focus(); try{ el.setSelectionRange(el.value.length,el.value.length) }catch(_){}
+  };
+  const findSaved=()=>(VAULT.list||[]).filter(r=>{ const f=r.f, rr=onlyDigits(f.same?f.c_rrn:(f.p_rrn||f.c_rrn)); return custLabel(r)===name&&(!birth||rr.startsWith(birth)) });
+  if(!vaultRaw()){ fillPartial(); return }
+  moOpen(`<h3>MK CRM에서 ${esc(name)}님</h3><p class="lead">이 폰에 저장된 고객이면 PIN으로 주민번호·휴대폰·계좌까지 한 번에 불러옵니다.<br>처음이면 이름·생년월일만 넣고, 다 쓴 뒤 [고객 저장]을 누르면 다음부터는 한 번에 됩니다.</p>
+    <p class="mo-err" id="crmErr"></p>
+    <div class="mo-acts"><button id="crmPart">이름·생년월일만</button><button class="blue" id="crmVault">저장된 고객에서 불러오기</button></div>`);
+  $('#crmPart').onclick=()=>{ moClose(); fillPartial() };
+  $('#crmVault').onclick=async()=>{
+    moClose(); if(!await unlock(false)){ fillPartial(); return }
+    const hit=findSaved();
+    if(hit.length===1){ const cur=collect().insured.name; if(cur&&cur!==name&&!confirm(`지금 입력 중인 내용(${cur})이 지워지고 ${name}님으로 바뀝니다. 계속할까요?`)) return; applyCust(hit[0]); return }
+    if(hit.length>1){ fillPartial(); custUI(`${name}님이 ${hit.length}명 저장돼 있어요 — [고객 불러오기]에서 골라 주세요.`); return }
+    fillPartial(); custUI(`${name}님은 아직 저장 전이에요. 이름${birth?'·생년월일':''}만 넣었습니다 — 다 쓴 뒤 [고객 저장]을 누르면 다음부터 한 번에 불러옵니다.`);
+  };
+}
 // 답장 링크로 열렸을 때 (#s=)
 async function bootReply(){
   const m=location.hash.match(/^#s=([A-Za-z0-9_-]{20,})/); if(!m) return;
@@ -2009,6 +2041,8 @@ $('#bankList').innerHTML=BANKS.map(b=>`<option value="${b}">`).join('');
 renderInsList(); renderFax(); renderAtts(); render(); custUI(); logRender();
 detectServer();
 bootReply();
+bootCRM();
+window.addEventListener('hashchange',()=>{ if(/^#crm=/.test(location.hash)) bootCRM() });
 setInterval(refreshReqHash,1500);
 { const r=document.querySelector(`input[name="mfaxApp"][value="${mfaxPkg}"]`); if(r) r.checked=true; }
 $('#mfaxApp').addEventListener('change',e=>{ if(!MFAX_APPS[e.target.value]) return; mfaxPkg=e.target.value; try{ localStorage.setItem('claimMfaxPkg',mfaxPkg) }catch(_){} Object.keys(SP).forEach(refreshSP); });
